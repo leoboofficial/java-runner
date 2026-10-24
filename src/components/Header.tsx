@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700 shadow-xs">
                   <Terminal className="w-4 h-4 text-emerald-600" />
-                  <span>Student Examination Workspace</span>
+                  <span>JAVA LAB Workspace</span>
                 </div>
                 {currentUser.role === 'FACULTY' && (
                   <button
@@ -144,10 +144,20 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={onOpenManual}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold transition shadow-xs"
-                title="Open User Manual & SOP Documentation"
+                title={
+                  currentTab === 'faculty'
+                    ? 'Open Faculty Examination & Administration Manual'
+                    : 'Open Student Examination & Practical Record Manual'
+                }
               >
-                <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
-                <span className="hidden sm:inline">User Manual</span>
+                <BookOpen
+                  className={`w-3.5 h-3.5 ${
+                    currentTab === 'faculty' ? 'text-indigo-600' : 'text-emerald-600'
+                  }`}
+                />
+                <span className="hidden sm:inline">
+                  {currentTab === 'faculty' ? 'Faculty Manual' : 'Student Manual'}
+                </span>
               </button>
             )}
           </div>

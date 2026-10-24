@@ -302,7 +302,7 @@ export default function App() {
       <UserManualModal
         isOpen={isManualOpen}
         onClose={() => setIsManualOpen(false)}
-        currentRole={currentUser.role === 'FACULTY' ? 'FACULTY' : 'STUDENT'}
+        role={currentTab === 'faculty' ? 'FACULTY' : 'STUDENT'}
       />
     </div>
   );

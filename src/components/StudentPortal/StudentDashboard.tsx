@@ -97,7 +97,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                Student Examination Portal
+                JAVA LAB Portal
               </span>
               <span className="text-xs text-slate-500 font-mono">
                 {currentUser.regNo ? `${currentUser.regNo} • ` : ''}{currentUser.email || 'student@student.hindustanuniv.ac.in'}
