@@ -19,6 +19,7 @@ interface AuthModalProps {
   facultyList?: FacultyRecord[];
   studentsList?: StudentRecord[];
   googleSheetsUrl?: string;
+  portalRole?: 'faculty' | 'student';
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -29,17 +30,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   facultyList = [],
   studentsList = [],
   googleSheetsUrl,
+  portalRole,
 }) => {
+  const isFacultyPortal = portalRole === 'faculty' || (!portalRole && currentUser.role === 'FACULTY');
+
   const [activeMode, setActiveMode] = useState<'verify' | 'manual'>('verify');
   const [emailInput, setEmailInput] = useState(currentUser.email || '');
   const [regNoInput, setRegNoInput] = useState(currentUser.regNo || '');
   const [nameInput, setNameInput] = useState(currentUser.name || '');
   const [roleInput, setRoleInput] = useState<'FACULTY' | 'STUDENT'>(
-    currentUser.role === 'FACULTY' ? 'FACULTY' : 'STUDENT'
+    isFacultyPortal ? 'FACULTY' : currentUser.role === 'FACULTY' ? 'FACULTY' : 'STUDENT'
   );
   const [isVerifying, setIsVerifying] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Re-synchronize when opened or user/mode changes
+  React.useEffect(() => {
+    if (isOpen) {
+      setEmailInput(currentUser.email || '');
+      setRegNoInput(currentUser.regNo || '');
+      setNameInput(currentUser.name || '');
+      setRoleInput(isFacultyPortal ? 'FACULTY' : currentUser.role === 'FACULTY' ? 'FACULTY' : 'STUDENT');
+      setErrorMsg('');
+      setSuccessMsg('');
+    }
+  }, [isOpen, currentUser, isFacultyPortal]);
 
   if (!isOpen) return null;
 
@@ -48,10 +64,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMsg('');
     setSuccessMsg('');
     const cleanEmail = emailInput.trim().toLowerCase();
-    const cleanRegNo = regNoInput.trim().toUpperCase();
+    const cleanRegNo = isFacultyPortal ? '' : regNoInput.trim().toUpperCase();
 
     if (!cleanEmail) {
-      setErrorMsg('Please enter your university email address.');
+      setErrorMsg(
+        isFacultyPortal
+          ? 'Please enter your faculty email address.'
+          : 'Please enter your university email address.'
+      );
       return;
     }
 
@@ -62,11 +82,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const result = await SheetService.login(cleanEmail, cleanRegNo, googleSheetsUrl);
         if (result && result.success && result.user) {
           const verifiedUser: User = {
-            role: result.user.role === 'FACULTY' ? 'FACULTY' : 'STUDENT',
+            role: isFacultyPortal ? 'FACULTY' : result.user.role === 'FACULTY' ? 'FACULTY' : 'STUDENT',
             email: result.user.email,
             name: result.user.name,
-            regNo: result.user.regNo,
-            department: result.user.department,
+            regNo: isFacultyPortal ? undefined : result.user.regNo,
+            department: result.user.department || 'Department of Computer Applications',
           };
           setSuccessMsg(
             `Authenticated successfully via Google Sheets! Logged in as ${verifiedUser.name} (${verifiedUser.role}).`
@@ -79,7 +99,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         } else {
           setErrorMsg(
             result?.error ||
-              `No match found in Google Sheet for "${cleanEmail}". Make sure this email exists in either the "Faculty" or "Students" tab with proper permissions.`
+              (isFacultyPortal
+                ? `No match found in Google Sheet for "${cleanEmail}". Make sure this email exists in the "Faculty" tab.`
+                : `No match found in Google Sheet for "${cleanEmail}". Make sure this email exists in either the "Faculty" or "Students" tab with proper credentials.`)
           );
           setIsVerifying(false);
           return;
@@ -103,31 +125,35 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         return;
       }
 
-      const stuMatch = studentsList.find(
-        (s) =>
-          s.email.trim().toLowerCase() === cleanEmail ||
-          (cleanRegNo && s.regNo.trim().toUpperCase() === cleanRegNo)
-      );
+      if (!isFacultyPortal) {
+        const stuMatch = studentsList.find(
+          (s) =>
+            s.email.trim().toLowerCase() === cleanEmail ||
+            (cleanRegNo && s.regNo.trim().toUpperCase() === cleanRegNo)
+        );
 
-      if (stuMatch) {
-        const verifiedUser: User = {
-          role: 'STUDENT',
-          email: stuMatch.email,
-          name: stuMatch.name,
-          regNo: stuMatch.regNo,
-          department: stuMatch.department,
-        };
-        setSuccessMsg(`Welcome Student: ${verifiedUser.name} (${verifiedUser.regNo})!`);
-        setTimeout(() => {
-          onLogin(verifiedUser);
-          onClose();
-        }, 800);
-        return;
+        if (stuMatch) {
+          const verifiedUser: User = {
+            role: 'STUDENT',
+            email: stuMatch.email,
+            name: stuMatch.name,
+            regNo: stuMatch.regNo,
+            department: stuMatch.department,
+          };
+          setSuccessMsg(`Welcome Student: ${verifiedUser.name} (${verifiedUser.regNo})!`);
+          setTimeout(() => {
+            onLogin(verifiedUser);
+            onClose();
+          }, 800);
+          return;
+        }
       }
 
       // If not in local pre-defined list, let user edit profile in tab 2
       setErrorMsg(
-        `Could not verify "${cleanEmail}". Use the "Edit Profile Directly" tab to update your student or faculty profile.`
+        isFacultyPortal
+          ? `Could not verify faculty email "${cleanEmail}". Use the "Edit Profile Directly" tab to update your faculty profile.`
+          : `Could not verify "${cleanEmail}". Use the "Edit Profile Directly" tab to update your student or faculty profile.`
       );
     } catch (err: any) {
       setErrorMsg(err.message || 'Error occurred while verifying with Google Sheets.');
@@ -139,19 +165,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleManualSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nameInput.trim()) {
-      setErrorMsg('Name is required.');
+      setErrorMsg('Full name is required.');
       return;
     }
     if (!emailInput.trim()) {
-      setErrorMsg('Email is required.');
+      setErrorMsg('Email address is required.');
       return;
     }
 
     const newUser: User = {
-      role: roleInput,
+      role: isFacultyPortal ? 'FACULTY' : roleInput,
       name: nameInput.trim(),
       email: emailInput.trim().toLowerCase(),
-      regNo: roleInput === 'STUDENT' ? (regNoInput.trim().toUpperCase() || '') : undefined,
+      regNo: isFacultyPortal
+        ? undefined
+        : roleInput === 'STUDENT'
+        ? regNoInput.trim().toUpperCase() || ''
+        : undefined,
+      department: currentUser.department || 'Department of Computer Applications',
     };
 
     onLogin(newUser);
@@ -167,9 +198,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
-          <div className="flex items-center gap-2">
-            <UserCheck className="w-5 h-5 text-indigo-600" />
-            <h3 className="text-base font-bold text-slate-900">User Authentication & Profile</h3>
+          <div className="flex items-center gap-2.5">
+            <UserCheck className={`w-5 h-5 ${isFacultyPortal ? 'text-indigo-600' : 'text-emerald-600'}`} />
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900">User Authentication & Profile</h3>
+                <span
+                  className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border ${
+                    isFacultyPortal
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  }`}
+                >
+                  {isFacultyPortal ? 'Faculty Portal' : 'Student Portal'}
+                </span>
+              </div>
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -190,7 +234,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             }}
             className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
               activeMode === 'verify'
-                ? 'border-indigo-600 text-indigo-600'
+                ? isFacultyPortal
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-emerald-600 text-emerald-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -206,7 +252,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             }}
             className={`pb-2.5 px-3 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
               activeMode === 'manual'
-                ? 'border-indigo-600 text-indigo-600'
+                ? isFacultyPortal
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-emerald-600 text-emerald-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -235,34 +283,45 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div className="space-y-4">
               <form onSubmit={handleVerifyWithSheet} className="space-y-3.5">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">University Email Address</label>
+                  <label className="text-xs font-semibold text-slate-700">
+                    {isFacultyPortal ? 'Faculty Email Address' : 'University Email Address'}
+                  </label>
                   <input
                     type="email"
                     required
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="Faculty: @hindustanuniv.ac.in | Student: @student.hindustanuniv.ac.in"
+                    placeholder={
+                      isFacultyPortal
+                        ? 'e.g. yourname@hindustanuniv.ac.in'
+                        : 'Faculty: @hindustanuniv.ac.in | Student: @student.hindustanuniv.ac.in'
+                    }
                     className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Registration Number <span className="text-slate-500 font-normal">(Required for Students)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={regNoInput}
-                    onChange={(e) => setRegNoInput(e.target.value)}
-                    placeholder="e.g. 21BCE0450 (leave blank for Faculty)"
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
+                {/* Registration Number - ONLY shown on Student side */}
+                {!isFacultyPortal && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700">
+                      Registration Number <span className="text-slate-500 font-normal">(Required for Students)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={regNoInput}
+                      onChange={(e) => setRegNoInput(e.target.value)}
+                      placeholder="e.g. 21BCE0450 (leave blank for Faculty)"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                )}
 
                 <button
                   type="submit"
                   disabled={isVerifying}
-                  className="w-full py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition flex items-center justify-center gap-2 disabled:opacity-50"
+                  className={`w-full py-2.5 rounded-xl text-sm font-semibold text-white shadow-md transition flex items-center justify-center gap-2 disabled:opacity-50 ${
+                    isFacultyPortal ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                  }`}
                 >
                   {isVerifying ? (
                     <>
@@ -272,7 +331,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   ) : (
                     <>
                       <ShieldCheck className="w-4 h-4" />
-                      <span>Verify Details</span>
+                      <span>{isFacultyPortal ? 'Verify Faculty Access' : 'Verify Details'}</span>
                     </>
                   )}
                 </button>
@@ -287,53 +346,64 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   required
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
-                  placeholder="e.g. Dr. Sathish Kumar M or Student Name"
+                  placeholder={isFacultyPortal ? 'e.g. Dr. Sathish Kumar M' : 'e.g. Student Name'}
                   className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Your Email Address</label>
+                <label className="text-xs font-semibold text-slate-700">
+                  {isFacultyPortal ? 'Your Faculty Email Address' : 'Your Email Address'}
+                </label>
                 <input
                   type="email"
                   required
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="faculty@hindustanuniv.ac.in or student@student.hindustanuniv.ac.in"
+                  placeholder={
+                    isFacultyPortal
+                      ? 'faculty@hindustanuniv.ac.in'
+                      : 'student@student.hindustanuniv.ac.in or faculty@hindustanuniv.ac.in'
+                  }
                   className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Role</label>
-                  <select
-                    value={roleInput}
-                    onChange={(e) => setRoleInput(e.target.value as 'FACULTY' | 'STUDENT')}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="FACULTY">Faculty</option>
-                    <option value="STUDENT">Student</option>
-                  </select>
-                </div>
-
-                {roleInput === 'STUDENT' && (
+              {/* Role & Registration Number - ONLY shown on Student side */}
+              {!isFacultyPortal && (
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700">Registration Number</label>
-                    <input
-                      type="text"
-                      value={regNoInput}
-                      onChange={(e) => setRegNoInput(e.target.value)}
-                      placeholder="e.g. 21BCE0450"
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
+                    <label className="text-xs font-semibold text-slate-700">Role</label>
+                    <select
+                      value={roleInput}
+                      onChange={(e) => setRoleInput(e.target.value as 'FACULTY' | 'STUDENT')}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="STUDENT">Student</option>
+                      <option value="FACULTY">Faculty</option>
+                    </select>
                   </div>
-                )}
-              </div>
+
+                  {roleInput === 'STUDENT' && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Registration Number</label>
+                      <input
+                        type="text"
+                        value={regNoInput}
+                        onChange={(e) => setRegNoInput(e.target.value)}
+                        placeholder="e.g. 21BCE0450"
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition flex items-center justify-center gap-2 mt-4"
+                className={`w-full py-2.5 rounded-xl text-sm font-semibold text-white shadow-md transition flex items-center justify-center gap-2 mt-4 ${
+                  isFacultyPortal ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Save & Apply Profile</span>

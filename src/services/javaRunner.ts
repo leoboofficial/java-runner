@@ -24,7 +24,9 @@ export class JavaRunnerService {
     // 1. Try remote Docker / Render service if provided and not explicitly forced built-in
     if (options?.remoteUrl && !options?.forceBuiltin && options.remoteUrl.startsWith('http') && !options.remoteUrl.includes('YOUR-RENDER-APP-NAME')) {
       try {
-        const response = await fetch(options.remoteUrl, {
+        const cleanUrl = options.remoteUrl.trim().replace(/\/+$/, '');
+        const endpoint = cleanUrl.endsWith('/execute') ? cleanUrl : `${cleanUrl}/execute`;
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

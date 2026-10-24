@@ -103,15 +103,23 @@ export default function App() {
   const [faculty] = useState<FacultyRecord[]>(INITIAL_FACULTY);
 
   // Method B: System Settings read directly from .env variables (No UI settings tampering)
-  const [settings] = useState<SystemSettings>(() => ({
-    renderServiceUrl: (import.meta as any).env.VITE_RENDER_SERVICE_URL || 'https://YOUR-RENDER-APP-NAME.onrender.com/execute',
-    apiSecret: (import.meta as any).env.VITE_API_SECRET || 'MY_SECURE_LAB_KEY_123',
-    googleSheetsUrl: (import.meta as any).env.VITE_APPS_SCRIPT_URL || '',
-    enforceFullscreen: true,
-    blockCopyPaste: true,
-    trackTabSwitches: true,
-    useBuiltinRunner: false,
-  }));
+  const [settings] = useState<SystemSettings>(() => {
+    const rawUrl = (import.meta as any).env.VITE_RENDER_SERVICE_URL || 'https://YOUR-RENDER-APP-NAME.onrender.com/execute';
+    const cleanUrl = typeof rawUrl === 'string' ? rawUrl.trim().replace(/\/+$/, '') : '';
+    const normalizedUrl = cleanUrl && !cleanUrl.endsWith('/execute') && cleanUrl.startsWith('http')
+      ? `${cleanUrl}/execute`
+      : cleanUrl;
+
+    return {
+      renderServiceUrl: normalizedUrl || 'https://YOUR-RENDER-APP-NAME.onrender.com/execute',
+      apiSecret: (import.meta as any).env.VITE_API_SECRET || 'MY_SECURE_LAB_KEY_123',
+      googleSheetsUrl: (import.meta as any).env.VITE_APPS_SCRIPT_URL || '',
+      enforceFullscreen: true,
+      blockCopyPaste: true,
+      trackTabSwitches: true,
+      useBuiltinRunner: false,
+    };
+  });
 
   // Sync exercises from Google Sheets if configured in .env
   React.useEffect(() => {
@@ -297,6 +305,7 @@ export default function App() {
         facultyList={faculty}
         studentsList={students}
         googleSheetsUrl={settings.googleSheetsUrl}
+        portalRole={currentTab}
       />
 
       <UserManualModal
