@@ -317,15 +317,15 @@ Create a Google Spreadsheet named `Java_Lab_Database` with the following 5 sheet
 
 ### Step 1: Deploy Docker Execution Runner (Render)
 1. In your GitHub repository, ensure the `java-runner/` directory contains:
-   - `Dockerfile` (using `FROM eclipse-temurin:17-jdk-jammy`)
+   - `Dockerfile` (using `FROM eclipse-temurin:17-jdk-jammy` with universal root/subfolder context support)
    - `server.js` (Express + CORS + sequential runner)
-   - `package.json` and `package-lock.json`
+   - `package.json`
 2. Go to [Render Dashboard](https://dashboard.render.com/) > **New +** > **Web Service**.
-3. Select your repository and set:
-   - **Root Directory**: `java-runner`
+3. Connect your repository:
    - **Runtime**: `Docker`
+   - **Root Directory**: `java-runner` (or leave blank; both work out-of-the-box!)
    - **Instance Type**: `Free`
-4. Set Environment Variables on Render:
+4. Set Environment Variables on Render (**Environment** tab):
    - `API_SECRET` = `MY_SECURE_LAB_KEY_123`
    - `PORT` = `3000`
 5. Click **Deploy Web Service** and copy the live URL ending in `/execute`:

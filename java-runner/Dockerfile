@@ -11,16 +11,25 @@ RUN apt-get update && apt-get install -y curl && \
 
 WORKDIR /app
 
-# Copy ONLY package.json to completely ignore any stale or mismatched remote lockfile
-COPY package.json ./
-
-# Clean install with legacy peer deps to eliminate any ERESOLVE conflicts
-RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund
-
+# Copy files from the build context
 COPY . .
 
-# Ensure sandbox user has full access to temporary workspaces
+# Universal context handler:
+# If built from repository root (Root Directory was left blank on Render),
+# promote java-runner files directly to /app
+RUN if [ -d "java-runner" ]; then \
+      cp -rf java-runner/* /app/; \
+    fi
+
+# Clean install of runtime dependencies (cors and express)
+RUN npm install cors express --omit=dev --no-audit --no-fund
+
+# Ensure sandbox user has full access to temporary execution workspaces
 RUN chown -R sandbox:sandbox /tmp && chmod 777 /tmp
 
+# Build-time assertion: verify server.js is ready at /app/server.js
+RUN test -f /app/server.js || (echo "FATAL: /app/server.js missing" && exit 1)
+
 EXPOSE 3000
+
 CMD ["node", "server.js"]
