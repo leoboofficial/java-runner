@@ -2,7 +2,7 @@ import { Exercise, StudentRecord, Submission, User, Violation } from '../types';
 
 /**
  * Service to communicate with Google Apps Script Web App (Code.gs)
- * Configured via environment variables (.env) to protect backend from tampering
+ * Configured via environment variables (.env) or localStorage
  */
 export class SheetService {
   /**
@@ -90,37 +90,68 @@ export class SheetService {
   }
 
   /**
-   * Post a new exercise to the Exercises tab
+   * Post a new exercise to the Exercises tab (with GET fallback if CORS redirect is blocked)
    */
-  static async saveExercise(sheetUrl: string, exercise: Exercise): Promise<boolean> {
-    if (!sheetUrl || !sheetUrl.startsWith('http')) return false;
+  static async saveExercise(sheetUrl: string, exercise: Exercise): Promise<{ success: boolean; message?: string }> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) {
+      return { success: false, message: 'Google Sheets URL is not configured' };
+    }
+
+    const payload = {
+      id: exercise.id,
+      title: exercise.title,
+      description: exercise.description,
+      category: exercise.category || 'Basic Java & Operators',
+      difficulty: exercise.difficulty || 'Easy',
+      openTime: exercise.openTime,
+      closeTime: exercise.closeTime,
+      publicInput: exercise.publicInput !== undefined ? String(exercise.publicInput) : '',
+      publicOutput: exercise.publicOutput !== undefined ? String(exercise.publicOutput) : '',
+      privateInput: exercise.privateInput !== undefined ? String(exercise.privateInput) : '',
+      privateOutput: exercise.privateOutput !== undefined ? String(exercise.privateOutput) : '',
+      starterCode: exercise.starterCode || '',
+    };
+
+    // Method 1: Standard POST with text/plain
     try {
-      await fetch(sheetUrl, {
+      const response = await fetch(sheetUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'saveExercise',
-          payload: {
-            id: exercise.id,
-            title: exercise.title,
-            description: exercise.description,
-            category: exercise.category || 'Basic Java & Operators',
-            difficulty: exercise.difficulty || 'Easy',
-            openTime: exercise.openTime,
-            closeTime: exercise.closeTime,
-            publicInput: exercise.publicInput,
-            publicOutput: exercise.publicOutput,
-            privateInput: exercise.privateInput,
-            privateOutput: exercise.privateOutput,
-            starterCode: exercise.starterCode || '',
-          },
+          payload,
         }),
       });
-      return true;
+
+      if (response.ok) {
+        const data = await response.json().catch(() => null);
+        if (data && data.success) {
+          return { success: true, message: data.message };
+        }
+        if (data && data.error) {
+          console.warn('Apps Script reported error:', data.error);
+        }
+      }
     } catch (err) {
-      console.warn('Failed to sync exercise to Google Sheet:', err);
-      return false;
+      console.warn('POST saveExercise network warning, trying GET fallback:', err);
     }
+
+    // Method 2: GET fallback (bypasses browser POST-redirect CORS restrictions)
+    try {
+      const encodedPayload = encodeURIComponent(JSON.stringify(payload));
+      const getUrl = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=saveExercise&payload=${encodedPayload}&t=${Date.now()}`;
+      const response = await fetch(getUrl);
+      if (response.ok) {
+        const data = await response.json().catch(() => null);
+        if (data && data.success) {
+          return { success: true, message: data.message };
+        }
+      }
+    } catch (fallbackErr) {
+      console.warn('GET fallback saveExercise failed:', fallbackErr);
+    }
+
+    return { success: false, message: 'Could not connect to Google Apps Script. Check Web App deployment permissions.' };
   }
 
   /**

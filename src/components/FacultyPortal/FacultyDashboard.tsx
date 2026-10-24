@@ -11,6 +11,7 @@ import {
   Users,
   Printer,
   Download,
+  RefreshCw,
 } from 'lucide-react';
 import { ExportResultsModal } from './ExportResultsModal';
 import { LabRecordModal } from '../StudentPortal/LabRecordModal';
@@ -23,6 +24,7 @@ interface FacultyDashboardProps {
   students: StudentRecord[];
   onSaveExercise: (exercise: Exercise) => void;
   onAddStudent: (student: StudentRecord) => void;
+  onRefreshExercises?: () => void;
 }
 
 export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
@@ -33,6 +35,7 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
   students,
   onSaveExercise,
   onAddStudent,
+  onRefreshExercises,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'exercises' | 'submissions' | 'violations' | 'roster'>('exercises');
   const [showExportModal, setShowExportModal] = useState(false);
@@ -82,6 +85,16 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
               <Download className="w-4 h-4 text-white" />
               <span>Export Results</span>
             </button>
+            {onRefreshExercises && (
+              <button
+                onClick={onRefreshExercises}
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-xs font-semibold text-white flex items-center gap-1.5 transition shadow-xs"
+                title="Fetch latest exercises and starter code from Google Sheet Exercises tab"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-indigo-300" />
+                <span>Sync from Sheet</span>
+              </button>
+            )}
             <button
               onClick={copyStudentUrl}
               className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 border border-slate-200 flex items-center gap-2 transition shadow-xs"

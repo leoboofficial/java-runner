@@ -42,16 +42,40 @@ export const ExerciseManager: React.FC<ExerciseManagerProps> = ({
   const [verifying, setVerifying] = useState(false);
   const [verifyLog, setVerifyLog] = useState<{ public: string; private: string } | null>(null);
 
-  const openNewModal = () => {
-    setEditingEx(null);
-    setTitle('');
-    setDescription('');
+  const loadTwoIntegersTemplate = () => {
+    setTitle('Basic Arithmetic Operations on Two Integers');
+    setDescription(
+      'Create a program that reads two integers, a and b, from the user. Your program should compute and display:\n• The sum of a and b\n• The difference when b is subtracted from a\n• The product of a and b\n• The quotient when a is divided by b\n• The remainder when a is divided by b'
+    );
+    setCategory('Java Basics & Operators');
+    setDifficulty('Easy');
+    setPublicInput('10\n3');
+    setPublicOutput('Sum: 13\nDifference: 7\nProduct: 30\nQuotient: 3\nRemainder: 1');
+    setPrivateInput('25\n4');
+    setPrivateOutput('Sum: 29\nDifference: 21\nProduct: 100\nQuotient: 6\nRemainder: 1');
+    setStarterCode(`import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        
+        // Read two integers from input
+        int a = sc.nextInt();
+        int b = sc.nextInt();
+        
+        // TODO: Compute and print the sum, difference, product, quotient, and remainder
+        
+        
+        sc.close();
+    }
+}`);
+  };
+
+  const loadArraySumTemplate = () => {
+    setTitle('Sum of Array Elements');
+    setDescription('Write a Java program to read an integer n followed by n integers, and print their total sum.');
     setCategory('Arrays & Algorithms');
     setDifficulty('Easy');
-    const now = new Date();
-    const close = new Date(Date.now() + 3600000 * 24 * 30);
-    setOpenTime(now.toISOString().slice(0, 16));
-    setCloseTime(close.toISOString().slice(0, 16));
     setPublicInput('5\n10 20 30 40 50');
     setPublicOutput('150');
     setPrivateInput('4\n1 2 3 4');
@@ -67,8 +91,18 @@ public class Main {
             sum += sc.nextInt();
         }
         System.out.println(sum);
+        sc.close();
     }
 }`);
+  };
+
+  const openNewModal = () => {
+    setEditingEx(null);
+    const now = new Date();
+    const close = new Date(Date.now() + 3600000 * 24 * 30);
+    setOpenTime(now.toISOString().slice(0, 16));
+    setCloseTime(close.toISOString().slice(0, 16));
+    loadTwoIntegersTemplate();
     setVerifyLog(null);
     setShowModal(true);
   };
@@ -292,6 +326,27 @@ public class Main {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-indigo-900">
+                  Quick Load Problem Templates:
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={loadTwoIntegersTemplate}
+                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
+                  >
+                    Two Integers Arithmetic
+                  </button>
+                  <button
+                    type="button"
+                    onClick={loadArraySumTemplate}
+                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 shadow-xs transition"
+                  >
+                    Array Sum
+                  </button>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2 space-y-1">
                   <label className="text-xs font-semibold text-slate-700">Problem Title</label>

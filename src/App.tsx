@@ -102,18 +102,21 @@ export default function App() {
   const [students, setStudents] = useState<StudentRecord[]>(INITIAL_STUDENTS);
   const [faculty] = useState<FacultyRecord[]>(INITIAL_FACULTY);
 
-  // Method B: System Settings read directly from .env variables (No UI settings tampering)
-  const [settings] = useState<SystemSettings>(() => {
+  // System Settings read from env with working Google Apps Script endpoint as default
+  const [settings, setSettings] = useState<SystemSettings>(() => {
     const rawUrl = (import.meta as any).env.VITE_RENDER_SERVICE_URL || 'https://java-runner-uwue.onrender.com/execute';
     const cleanUrl = typeof rawUrl === 'string' ? rawUrl.trim().replace(/\/+$/, '') : '';
     const normalizedUrl = cleanUrl && !cleanUrl.endsWith('/execute') && cleanUrl.startsWith('http')
       ? `${cleanUrl}/execute`
       : cleanUrl;
 
+    const savedSheetsUrl = typeof window !== 'undefined' ? localStorage.getItem('javalab_sheets_url') : null;
+    const defaultSheetsUrl = 'https://script.google.com/macros/s/AKfycbxfR4y8U-RvYb-yQxvgFyuvZu4l8v2Mi_KQtF5NVp4I12MAg2_HfLSe6jVQW649u3Pt/exec';
+
     return {
       renderServiceUrl: normalizedUrl || 'https://java-runner-uwue.onrender.com/execute',
       apiSecret: (import.meta as any).env.VITE_API_SECRET || 'MY_SECURE_LAB_KEY_123',
-      googleSheetsUrl: (import.meta as any).env.VITE_APPS_SCRIPT_URL || '',
+      googleSheetsUrl: (import.meta as any).env.VITE_APPS_SCRIPT_URL || savedSheetsUrl || defaultSheetsUrl,
       enforceFullscreen: true,
       blockCopyPaste: true,
       trackTabSwitches: true,
@@ -121,7 +124,7 @@ export default function App() {
     };
   });
 
-  // Sync exercises from Google Sheets if configured in .env
+  // Sync exercises from Google Sheets
   React.useEffect(() => {
     if (settings.googleSheetsUrl && settings.googleSheetsUrl.startsWith('http')) {
       SheetService.fetchActiveExercises(settings.googleSheetsUrl).then((fetched) => {
@@ -144,6 +147,7 @@ export default function App() {
 
   // Faculty: Save / Schedule new exercise
   const handleSaveExercise = async (newEx: Exercise) => {
+    // 1. Immediate local update
     setExercises((prev) => {
       const idx = prev.findIndex((e) => e.id === newEx.id);
       if (idx !== -1) {
@@ -153,14 +157,23 @@ export default function App() {
       }
       return [newEx, ...prev];
     });
-    showToast(`Exercise "${newEx.title}" scheduled!`);
 
-    // Sync to live Google Sheet if URL is configured in .env
+    // 2. Sync to live Google Sheet Exercises tab with Starter Code
     if (settings.googleSheetsUrl) {
-      const synced = await SheetService.saveExercise(settings.googleSheetsUrl, newEx);
-      if (synced) {
-        showToast(`Synced "${newEx.title}" to Google Sheet Exercises tab!`);
+      showToast(`Saving "${newEx.title}" to Google Sheet...`);
+      const syncResult = await SheetService.saveExercise(settings.googleSheetsUrl, newEx);
+      if (syncResult.success) {
+        showToast(`Synced "${newEx.title}" to Google Sheet Exercises tab with Starter Code!`);
+        // Refresh active exercises to ensure full sync
+        const fresh = await SheetService.fetchActiveExercises(settings.googleSheetsUrl);
+        if (fresh && fresh.length > 0) {
+          setExercises(fresh);
+        }
+      } else {
+        showToast(`Saved locally. Warning: ${syncResult.message || 'Check Apps Script deployment.'}`, 'warn');
       }
+    } else {
+      showToast(`Exercise "${newEx.title}" scheduled locally (Google Sheet URL not configured).`, 'warn');
     }
   };
 
@@ -168,6 +181,22 @@ export default function App() {
   const handleAddStudent = (newStu: StudentRecord) => {
     setStudents((prev) => [newStu, ...prev]);
     showToast(`Student ${newStu.name} (${newStu.regNo}) enrolled in roster!`);
+  };
+
+  // Faculty: Manually trigger re-sync from Google Sheets
+  const handleRefreshFromSheets = async () => {
+    if (settings.googleSheetsUrl) {
+      showToast('Syncing active exercises from Google Sheet...');
+      const fresh = await SheetService.fetchActiveExercises(settings.googleSheetsUrl);
+      if (fresh && fresh.length > 0) {
+        setExercises(fresh);
+        showToast(`Loaded ${fresh.length} exercise(s) from Google Sheet with Starter Code!`);
+      } else {
+        showToast('Google Sheet reachable, but returned 0 active exercises.', 'warn');
+      }
+    } else {
+      showToast('Google Sheets URL is not configured.', 'warn');
+    }
   };
 
   // Student: Submit code
@@ -269,6 +298,7 @@ export default function App() {
             students={students}
             onSaveExercise={handleSaveExercise}
             onAddStudent={handleAddStudent}
+            onRefreshExercises={handleRefreshFromSheets}
           />
         )}
 
