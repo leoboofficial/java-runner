@@ -168,7 +168,7 @@ The platform utilizes a **Dual-Engine Execution Pipeline**:
 
 1. **Remote Execution Container (Render / Docker)**:
    - Client sends POST request to `${VITE_RENDER_SERVICE_URL}` with `x-api-key: ${VITE_API_SECRET}`.
-   - Request enters an in-memory sequential queue (`pQueue({ concurrency: 1 })`).
+   - Request enters an in-memory sequential queue (`concurrency: 1`).
    - Runner writes code to `/tmp/<run_id>/Main.java` and input to `/tmp/<run_id>/input.txt`.
    - Executes non-root sandboxed process:
      ```bash
@@ -318,8 +318,8 @@ Create a Google Spreadsheet named `Java_Lab_Database` with the following 5 sheet
 ### Step 1: Deploy Docker Execution Runner (Render)
 1. In your GitHub repository, ensure the `java-runner/` directory contains:
    - `Dockerfile` (using `FROM eclipse-temurin:17-jdk-jammy`)
-   - `server.js` (Express + `p-queue`)
-   - `package.json`
+   - `server.js` (Express + CORS + sequential runner)
+   - `package.json` and `package-lock.json`
 2. Go to [Render Dashboard](https://dashboard.render.com/) > **New +** > **Web Service**.
 3. Select your repository and set:
    - **Root Directory**: `java-runner`
