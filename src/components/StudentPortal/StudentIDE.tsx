@@ -68,19 +68,30 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
   const [recentViolationWarning, setRecentViolationWarning] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Keep selectedEx in sync when exercises array updates with fresh data (e.g. after Google Sheets fetch)
+  useEffect(() => {
+    if (selectedEx) {
+      const fresh = exercises.find((e) => e.id === selectedEx.id);
+      if (fresh && fresh !== selectedEx) {
+        setSelectedEx(fresh);
+      }
+    } else if (exercises.length > 0) {
+      setSelectedEx(activeExercises[0] || exercises[0]);
+    }
+  }, [exercises, selectedEx?.id]);
+
   useEffect(() => {
     if (selectedEx) {
       setCode(
-        selectedEx.starterCode ||
-          `import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        \n    }\n}`
+        selectedEx.starterCode && selectedEx.starterCode.trim().length > 0
+          ? selectedEx.starterCode
+          : `import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        \n    }\n}`
       );
       setPublicTestResult(null);
       setPrivateTestResult(null);
       setOfficialStatus(null);
-    } else if (exercises.length > 0) {
-      setSelectedEx(activeExercises[0] || exercises[0]);
     }
-  }, [selectedEx?.id, exercises.length]);
+  }, [selectedEx?.id, selectedEx?.starterCode]);
 
   useEffect(() => {
     if (preselectedExerciseId) {
@@ -257,7 +268,11 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
 
   const handleResetBoilerplate = () => {
     if (confirm('Reset code editor to starter boilerplate?')) {
-      setCode(selectedEx?.starterCode || `public class Main {\n    public static void main(String[] args) {\n        \n    }\n}`);
+      setCode(
+        selectedEx?.starterCode && selectedEx.starterCode.trim().length > 0
+          ? selectedEx.starterCode
+          : `import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        \n    }\n}`
+      );
     }
   };
 

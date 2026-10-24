@@ -16,7 +16,20 @@ export class SheetService {
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
-          return data;
+          return data.map((item: any, idx: number) => ({
+            id: item.id || `EX_${idx + 1}`,
+            title: item.title || `Exercise ${idx + 1}`,
+            description: item.description || '',
+            category: item.category || 'Basic Java & Operators',
+            difficulty: (item.difficulty as 'Easy' | 'Medium' | 'Hard') || 'Easy',
+            openTime: item.openTime || new Date(Date.now() - 3600000).toISOString(),
+            closeTime: item.closeTime || new Date(Date.now() + 3600000 * 24 * 30).toISOString(),
+            publicInput: item.publicInput !== undefined ? String(item.publicInput) : '',
+            publicOutput: item.publicOutput !== undefined ? String(item.publicOutput) : '',
+            privateInput: item.privateInput !== undefined ? String(item.privateInput) : '',
+            privateOutput: item.privateOutput !== undefined ? String(item.privateOutput) : '',
+            starterCode: item.starterCode || item.starter_code || item.starter || '',
+          }));
         }
       }
     } catch (err) {
@@ -88,14 +101,18 @@ export class SheetService {
         body: JSON.stringify({
           action: 'saveExercise',
           payload: {
+            id: exercise.id,
             title: exercise.title,
             description: exercise.description,
+            category: exercise.category || 'Basic Java & Operators',
+            difficulty: exercise.difficulty || 'Easy',
             openTime: exercise.openTime,
             closeTime: exercise.closeTime,
             publicInput: exercise.publicInput,
             publicOutput: exercise.publicOutput,
             privateInput: exercise.privateInput,
             privateOutput: exercise.privateOutput,
+            starterCode: exercise.starterCode || '',
           },
         }),
       });
