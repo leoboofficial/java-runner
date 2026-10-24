@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@layer base {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm 15mm 15mm;
+  }
+}
+
+@media print {
+  html, body, #root {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide standard web app shell */
+  header, footer, nav, aside {
+    display: none !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Unfreeze modals and scroll views so all pages paginate cleanly */
+  .fixed, .fixed.inset-0 {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: none !important;
+    display: block !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .h-\[95vh\], .h-\[94vh\], .h-\[92vh\], .h-screen, .max-h-\[90vh\] {
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  .overflow-hidden, .overflow-y-auto, .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  .shadow-2xl, .shadow-xl, .shadow-md, .shadow-xs {
+    box-shadow: none !important;
+  }
+
+  .break-after-page {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  /* Prevent awkward table row splitting */
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}
