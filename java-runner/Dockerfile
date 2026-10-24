@@ -11,11 +11,11 @@ RUN apt-get update && apt-get install -y curl && \
 
 WORKDIR /app
 
-# Copy package specifications
-COPY package*.json ./
+# Copy ONLY package.json to completely ignore any stale or mismatched remote lockfile
+COPY package.json ./
 
-# Install production dependencies cleanly
-RUN npm ci --omit=dev 2>/dev/null || npm install --omit=dev --no-audit --no-fund
+# Clean install with legacy peer deps to eliminate any ERESOLVE conflicts
+RUN npm install --omit=dev --legacy-peer-deps --no-audit --no-fund
 
 COPY . .
 
