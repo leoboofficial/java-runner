@@ -10,11 +10,12 @@ import {
   Eye,
   BookOpen,
   LogOut,
+  UserCog,
 } from 'lucide-react';
 
 interface HeaderProps {
-  currentTab: 'faculty' | 'student';
-  onSelectTab: (tab: 'faculty' | 'student') => void;
+  currentTab: 'faculty' | 'student' | 'coordinator';
+  onSelectTab: (tab: 'faculty' | 'student' | 'coordinator') => void;
   currentUser: User;
   onOpenLogin: () => void;
   onLogout?: () => void;
@@ -36,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const copyStudentLink = () => {
     const origin = window.location.origin;
-    const path = window.location.pathname.replace(/\/(faculty|student)\/?$/, '');
+    const path = window.location.pathname.replace(/\/(faculty|student|coordinator)\/?$/, '');
     const studentUrl = `${origin}${path}#/student`;
     navigator.clipboard.writeText(studentUrl);
     setCopiedLink(true);
@@ -68,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Role-Specific Portal Indicator & Navigation */}
           <div className="flex items-center gap-2">
             {currentTab === 'student' ? (
-              /* Student Portal - Strictly shows Student Badge; Faculty controls hidden */
+              /* Student Portal - Strictly shows Student Badge; Faculty & Coordinator controls hidden */
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700 shadow-xs">
                   <Terminal className="w-4 h-4 text-emerald-600" />
@@ -82,6 +83,24 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <GraduationCap className="w-3.5 h-3.5" />
                     <span>Return to Faculty</span>
+                  </button>
+                )}
+              </div>
+            ) : currentTab === 'coordinator' ? (
+              /* Coordinator Portal - Shows Coordinator Badge and Faculty Portal quick switch when authenticated */
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-violet-50 border border-violet-200 text-xs font-bold text-violet-700 shadow-xs">
+                  <UserCog className="w-4 h-4 text-violet-600" />
+                  <span>Course Coordinator Portal</span>
+                </div>
+                {isVerified && (
+                  <button
+                    onClick={() => onSelectTab('faculty')}
+                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold border border-slate-200 transition"
+                    title="Open Faculty Management Portal (/#/faculty)"
+                  >
+                    <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Faculty Portal</span>
                   </button>
                 )}
               </div>
@@ -125,30 +144,34 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenLogin}
               className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-left transition shadow-xs group"
-              title={isVerified ? 'Switch authenticated account' : 'Sign in with Google Sheet credentials'}
+              title={isVerified ? 'Switch authenticated account' : 'Sign in to your account'}
             >
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentTab === 'faculty'
+                  currentTab === 'coordinator'
+                    ? 'bg-violet-100 text-violet-700 border border-violet-200'
+                    : currentTab === 'faculty'
                     ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
                     : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                 }`}
               >
-                {currentTab === 'faculty' ? 'F' : 'S'}
+                {currentTab === 'coordinator' ? 'C' : currentTab === 'faculty' ? 'F' : 'S'}
               </div>
               <div className="hidden md:block">
                 <div className="text-xs font-semibold text-slate-800 group-hover:text-slate-900 leading-tight">
                   {isVerified ? currentUser.name : 'Sign In'}
                 </div>
-                <div className="text-[10px] text-slate-500 flex items-center gap-1">
-                  <span>
-                    {isVerified
-                      ? currentUser.role === 'FACULTY'
+                {isVerified && (
+                  <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                    <span>
+                      {currentUser.role === 'COORDINATOR'
+                        ? currentUser.email || currentUser.username || 'Coordinator'
+                        : currentUser.role === 'FACULTY'
                         ? currentUser.email
-                        : currentUser.regNo || currentUser.email
-                      : 'Verify via Google Sheet'}
-                  </span>
-                </div>
+                        : currentUser.regNo || currentUser.email}
+                    </span>
+                  </div>
+                )}
               </div>
               <Users className="w-3.5 h-3.5 text-slate-400 ml-1 group-hover:text-slate-600" />
             </button>
@@ -169,18 +192,28 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={onOpenManual}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold transition shadow-xs"
                 title={
-                  currentTab === 'faculty'
+                  currentTab === 'coordinator'
+                    ? 'Open Course Coordinator Manual'
+                    : currentTab === 'faculty'
                     ? 'Open Faculty Examination & Administration Manual'
                     : 'Open Student Examination & Practical Record Manual'
                 }
               >
                 <BookOpen
                   className={`w-3.5 h-3.5 ${
-                    currentTab === 'faculty' ? 'text-indigo-600' : 'text-emerald-600'
+                    currentTab === 'coordinator'
+                      ? 'text-violet-600'
+                      : currentTab === 'faculty'
+                      ? 'text-indigo-600'
+                      : 'text-emerald-600'
                   }`}
                 />
                 <span className="hidden sm:inline">
-                  {currentTab === 'faculty' ? 'Faculty Manual' : 'Student Manual'}
+                  {currentTab === 'coordinator'
+                    ? 'Coordinator Manual'
+                    : currentTab === 'faculty'
+                    ? 'Faculty Manual'
+                    : 'Student Manual'}
                 </span>
               </button>
             )}

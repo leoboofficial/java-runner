@@ -6,13 +6,14 @@ An enterprise-grade, anti-cheating Java Online Laboratory, Rubric Evaluation, an
 
 ## Table of Contents
 1. [Architecture Overview](#1-architecture-overview)
-2. [Dual-Portal Routing Structure](#2-dual-portal-routing-structure)
+2. [Three-Portal Routing Structure](#2-three-portal-routing-structure)
 3. [Complete End-to-End Execution Flow](#3-complete-end-to-end-execution-flow)
-   - [A. Faculty Management Workflow](#a-faculty-management-workflow)
-   - [B. Student Examination Workflow](#b-student-examination-workflow)
-   - [C. Code Execution & Evaluation Engine Flow](#c-code-execution--evaluation-engine-flow)
-   - [D. Anti-Cheating, Mail ID & Multi-Student Proxy Detection](#d-anti-cheating-mail-id--multi-student-proxy-detection)
-   - [E. Practical Lab Record (PDF) Generation Flow](#e-practical-lab-record-pdf-generation-flow)
+   - [A. Course Coordinator Workflow (`/#/coordinator`)](#a-course-coordinator-workflow-coordinator)
+   - [B. Faculty Management Workflow (`/#/faculty`)](#b-faculty-management-workflow-faculty)
+   - [C. Student Examination Workflow (`/#/student`)](#c-student-examination-workflow-student)
+   - [D. Code Execution & Evaluation Engine Flow](#d-code-execution--evaluation-engine-flow)
+   - [E. Anti-Cheating, Mail ID & Multi-Student Proxy Detection](#e-anti-cheating-mail-id--multi-student-proxy-detection)
+   - [F. Practical Lab Record (PDF) Generation Flow](#f-practical-lab-record-pdf-generation-flow)
 4. [Environment Variables & Configuration Paths](#4-environment-variables--configuration-paths)
 5. [Database Schema Reference (Google Sheets & Excel `.xls`)](#5-database-schema-reference-google-sheets--excel-xls)
 6. [Deployment Guide](#6-deployment-guide)
@@ -30,20 +31,19 @@ An enterprise-grade, anti-cheating Java Online Laboratory, Rubric Evaluation, an
                                   |         GitHub Pages / Static Host       |
                                   |       React 19 + Vite + Tailwind CSS     |
                                   +------------------------------------------+
-                                       /                                    \
-                        /#/faculty   /                                        \   /#/student
-                                   v                                            v
-               +-----------------------------+                    +-----------------------------+
-               |  Faculty Management Portal  |                    |  Student Exam IDE Workspace |
-               | - Rubric Evaluations (10m)  |                    | - Java 17 Online Editor     |
-               | - Exercise Scheduler        |                    | - Public & Hidden Evaluator |
-               | - Submissions Hub           |                    | - Copy/Paste & FS Guard     |
-               | - Mail ID & Proxy Monitor   |                    | - Mail ID + Device Audit    |
-               | - Student Roster & CSV      |                    | - Practical Record (PDF)    |
-               +-----------------------------+                    +-----------------------------+
-                                       \                                        /
-                                        \                                      /
-                                         v                                    v
+                                     /                  |                  \
+                     /#/coordinator /      /#/faculty   |                   \  /#/student
+                                   v                    v                    v
+      +----------------------------+   +---------------------------+   +---------------------------+
+      | Course Coordinator Portal  |   | Faculty Management Portal |   | Student Exam IDE Workspace|
+      | - Default Login + Pwd Chg  |   | - Rubric Evaluations (10m)|   | - Java 17 Online Editor   |
+      | - Forgot Pwd (Email OTP)   |   | - Exercise Scheduler      |   | - Public/Hidden Evaluator |
+      | - Add / Edit Course        |   | - Submissions Hub         |   | - Copy/Paste & FS Guard   |
+      |   Handlers (Faculty Tab)   |   | - Mail ID & Proxy Monitor |   | - Mail ID + Device Audit  |
+      +----------------------------+   | - Student Roster & CSV    |   | - Practical Record (PDF)  |
+                                       +---------------------------+   +---------------------------+
+                                     \                  |                  /
+                                      \                 v                 /
                               +----------------------------------------------------+
                               |            Environment Variable Bridge             |
                               +----------------------------------------------------+
@@ -60,41 +60,66 @@ An enterprise-grade, anti-cheating Java Online Laboratory, Rubric Evaluation, an
                      |  - Submissions        |                    +-----------------------+
                      |  - Violations         |
                      |  - Evaluations        |
+                     |  - CoordinatorAuth    |
+                     |  - ExamConfig         |
+                     |  - RubricTemplates    |
                      +-----------------------+
 ```
 
 ---
 
-## 2. Dual-Portal Routing Structure
+## 2. Three-Portal Routing Structure
 
-The application enforces route isolation through client-side hash routing (`window.location.hash`):
+The application enforces strict route isolation through client-side hash routing (`window.location.hash`):
 
 | Portal | Direct Access URL | Target Audience | Permissions / Capabilities |
 |---|---|---|---|
-| **Student Portal** | `https://<host>/#/student` | Enrolled Students | Login with Official Email + RegNo (silent Device ID + optional automatic Google account audit), Java 17 Editor, Public Run, Final Submit, Paste & Fullscreen Proctoring Guard, Lab Record PDF Generator & Submission. |
-| **Faculty Portal** | `https://<host>/#/faculty` | Course Instructors | Login with Faculty Email & Name, 10-Mark Rubric Evaluations, Schedule Exercises, Submissions Hub, Multi-Student Proxy & Anti-Cheating Monitor, Marksheet Exports (CSV/JSON). |
+| **Student Portal** | `https://<host>/#/student` | Enrolled Students | Login with Official Email + RegNo (silent Device ID + optional automatic Google account audit), Java 17 Editor, Public Run, Final Submit, Paste & Fullscreen Proctoring Guard. Automatically displays regular **Lab Exercises** normally and switches strictly to **ESE Practical** questions when Faculty enables **ESE Exam Mode**. |
+| **Faculty Portal** | `https://<host>/#/faculty` | Course Teachers | Login with Official Faculty Email authorized in the `Faculty` sheet, **ESE Practical Mode ON/OFF** live switch, customizable **Dynamic Rubrics (`LAB` & `ESE`)**, Question Bank (`LAB` & `ESE`), Auto-Evaluate Pending, Submissions Hub, Multi-Student Proxy & Anti-Cheating Monitor, Dynamic Marksheet CSV Exports. |
+| **Course Coordinator Portal** | `https://<host>/#/coordinator` | Course Coordinators | Login with Username/Password (`coordinator` / `Admin@123` default), first-login Change Password + Official Email setup, Email OTP Forgot Password recovery, Add & Edit Course Handlers (`Email`, `Name`, `Department`) in the `Faculty` sheet. |
 
 ---
 
 ## 3. Complete End-to-End Execution Flow
 
-### A. Faculty Management Workflow
+### A. Course Coordinator Workflow (`/#/coordinator`)
+1. **Default Sign-In & First-Time Password Change**:
+   - Navigate to `/#/coordinator`.
+   - First-time default credentials (stored hashed with SHA-256 in the `CoordinatorAuth` tab):
+     - **Username**: `coordinator`
+     - **Password**: `Admin@123`
+   - Upon first login, the dashboard automatically prompts the Coordinator to **Change Default Password** and register an **Official Email ID** for OTP recovery.
+2. **Forgot Password via Official Email OTP**:
+   - Click **Forgot Password?** on the Coordinator login screen.
+   - Enter the Official Email ID -> Apps Script generates a 10-minute 6-digit OTP in `CoordinatorAuth` and sends it via `MailApp.sendEmail`.
+   - Verify the 6-digit OTP and save a new password.
+3. **Add & Edit Course Teachers (Handlers)**:
+   - Enter **Email**, **Name**, and **Department** and click **Add Course Handler** to save a new teacher directly to the `Faculty` tab of the connected Google Sheet.
+   - All existing teachers load from the `Faculty` sheet into the directory table. Click **Edit User** on any row to populate the form, modify details (including email), and save changes back to the exact row in Google Sheets.
+
+### B. Faculty Management Workflow (`/#/faculty`)
 1. **Access Faculty Portal**:
    - Faculty navigates to `/#/faculty`.
    - Authenticates via institutional email (`@hindustanuniv.ac.in`) matching the `Faculty` sheet tab.
-2. **Exercise Scheduling**:
-   - Click **Schedule New Exercise** and configure Title, Description, Category, Difficulty (`Easy`, `Medium`, `Hard`), Open/Close Time, Public Test Case, Private Hidden Test Case, and Starter Code.
+2. **ESE Practical Mode Toggle (`ExamConfig` tab)**:
+   - Use the **Student Exam Visibility Mode** bar at the top of the Faculty Dashboard to toggle **ESE Practical Mode ON / OFF** and customize the exam title (e.g., `BCB52003 End Semester Practical Examination`).
+   - When **ESE Mode is ON**, students on `/#/student` keep the same familiar IDE UI but see **only `ESE` questions** (and the Lab Record PDF button is hidden for exam focus).
+   - When **ESE Mode is OFF**, students see regular **`LAB` exercises** and the **Generate Lab Record (PDF)** workflow.
+3. **Question Bank (`LAB` & `ESE`)**:
+   - Click **Add Lab Exercise** or **Add ESE Question** and configure Assessment Type (`LAB` | `ESE`), Title, Description, Category, Difficulty (`Easy`, `Medium`, `Hard`), Open/Close Time, Public Test Case, Private Hidden Test Case, and Starter Code.
    - Upon saving, writes/updates the row in the Google Sheet `Exercises` tab (`POST/GET action=saveExercise`).
-3. **Lab Record Rubric Evaluations (10 Marks)**:
-   - Evaluates students on **Concept Implemented (5)**, **Naming Conventions (1)**, **Documentation (1)**, and **Output (3)**.
-   - Displays **Official University Email**, **Recorded Personal Mail ID**, **Browser/Device ID**, and any **Multi-Student Proxy Alert** if the same Mail ID or Device ID was used for another Registration Number.
-4. **Submissions & Proctoring Auditing**:
+4. **Dynamic Rubric Builder & Separate `LAB` / `ESE` Evaluations**:
+   - Inside **Rubric Evaluations & Records**, switch between **Lab Exercise Evaluations (`LAB`)** and **ESE Practical Evaluations (`ESE`)**.
+   - Click **Configure Rubrics (LAB & ESE)** to customize criterion labels, descriptions, max marks, and auto-scoring rules (`CODE_IMPLEMENTATION`, `OUTPUT_TESTS`, `DOCUMENTATION`, `MANUAL`) saved in the Google Sheet `RubricTemplates` tab.
+   - Default templates: **LAB (10 Marks)** (`Concept 5 + Naming 1 + Documentation 1 + Output 3`) and **ESE (50 Marks)** (`Algorithm 10 + Implementation 20 + Execution 15 + Viva 5`).
+   - Supports manual slider/numeric grading, **Auto-Evaluate Pending**, **Export CSV Marksheet**, and **Multi-Student Proxy Alert** tracking.
+5. **Submissions & Proctoring Auditing**:
    - **Submissions Hub**: Inspect submitted Java code, public/hidden test outputs, and identity audit badges (`Mail ID` & `Device ID`).
    - **Anti-Cheating, Mail ID & Proxy Monitor**: View the **Student Mail ID & Device Login Audit** table plus paste/fullscreen violations and export both CSV reports.
 
 ---
 
-### B. Student Examination Workflow
+### C. Student Examination Workflow (`/#/student`)
 1. **Verify Credentials & Silent Device / Google Account Audit**:
    - Student navigates to `/#/student` and opens the profile verification dialog.
    - Enters only:
@@ -113,7 +138,7 @@ The application enforces route isolation through client-side hash routing (`wind
 
 ---
 
-### C. Code Execution & Evaluation Engine Flow
+### D. Code Execution & Evaluation Engine Flow
 
 The platform utilizes a **Dual-Engine Execution Pipeline**:
 
@@ -125,7 +150,7 @@ The platform utilizes a **Dual-Engine Execution Pipeline**:
 
 ---
 
-### D. Anti-Cheating, Mail ID & Multi-Student Proxy Detection
+### E. Anti-Cheating, Mail ID & Multi-Student Proxy Detection
 
 1. **Clipboard & Fullscreen Proctoring**:
    - **Clipboard Paste Interception** (`editor onPaste` -> `PASTE`, Severity: `High`): Copy/paste is blocked inside the code editor and recorded to the `Violations` sheet.
@@ -137,7 +162,7 @@ The platform utilizes a **Dual-Engine Execution Pipeline**:
 
 ---
 
-### E. Practical Lab Record (PDF) Generation Flow
+### F. Practical Lab Record (PDF) Generation Flow
 
 Students can click **Generate Lab Record (PDF)** to compile Title Page, Bonafide Certificate, 10-Mark Rubrics INDEX Table, and individual experiment pages with editable Procedures, Source Code, and Execution Outputs, and submit the record for Faculty Rubric Evaluation (`Evaluations` sheet).
 
@@ -161,7 +186,7 @@ Configure endpoints via environment variables at build time (no secrets hardcode
 
 ## 5. Database Schema Reference (Google Sheets & Excel `.xls`)
 
-You can import the ready-made 7-tab Excel workbook **`/public/JavaLabPro_Database_Template.xls`** directly into Google Sheets (**File > Import > Upload**), or run **`setupAllSheets()`** inside Google Apps Script to auto-create all **7 tabs** with Plain Text (`@`) formatting:
+You can import the ready-made 10-tab Excel workbook **`/public/JavaLabPro_Database_Template.xls`** directly into Google Sheets (**File > Import > Upload**), or run **`setupAllSheets()`** inside Google Apps Script to auto-create all **10 tabs** with Plain Text (`@`) formatting:
 
 ### Tab 1: `Faculty`
 | Col | Header | Description |
@@ -181,7 +206,7 @@ You can import the ready-made 7-tab Excel workbook **`/public/JavaLabPro_Databas
 ### Tab 3: `Exercises`
 | Col | Header | Description |
 |---|---|---|
-| A | `Exercise ID` | Unique ID (e.g., `EX_1`) |
+| A | `Exercise ID` | Unique ID (e.g., `EX_1`, `ESE_1`) |
 | B | `Title` | Problem Title |
 | C | `Description` | Problem statement & constraints |
 | D | `Open Time` | ISO start datetime (`2026-01-01T00:00`) |
@@ -193,6 +218,7 @@ You can import the ready-made 7-tab Excel workbook **`/public/JavaLabPro_Databas
 | J | `Starter Code` | Initial Java template loaded in IDE |
 | K | `Category` | Topic category |
 | L | `Difficulty` | `Easy` \| `Medium` \| `Hard` |
+| M | `Assessment Type` | `LAB` \| `ESE` (controls Student IDE visibility) |
 
 ### Tab 4: `LoginAudit` *(New — Mail ID & Multi-Student Proxy Tracking)*
 | Col | Header | Description |
@@ -221,6 +247,7 @@ You can import the ready-made 7-tab Excel workbook **`/public/JavaLabPro_Databas
 | J | `Device ID` | Browser/Device identifier |
 | K | `Multi-Student Flag` | `CLEAR` or `FLAGGED: Shared Mail ID / Device...` |
 | L | `Source Code` | Full submitted Java source file |
+| M | `Assessment Type` | `LAB` \| `ESE` |
 
 ### Tab 6: `Violations`
 | Col | Header | Description |
@@ -255,9 +282,41 @@ You can import the ready-made 7-tab Excel workbook **`/public/JavaLabPro_Databas
 | N | `Multi-Student Flag` | `CLEAR` or `FLAGGED: Shared Mail ID / Device...` |
 | O | `Faculty Remarks` | Evaluator remarks |
 | P | `Evaluated By` | Faculty evaluator name |
+| Q | `Assessment Type` | `LAB` \| `ESE` |
+| R | `Rubric Details JSON` | Dynamic criterion breakdown & max total JSON |
+
+### Tab 8: `CoordinatorAuth` *(Course Coordinator Credentials & OTP Recovery)*
+| Col | Header | Description |
+|---|---|---|
+| A | `Username` | Coordinator login username (default: `coordinator`) |
+| B | `PasswordHash` | SHA-256 hash of password (default: SHA-256 of `Admin@123`) |
+| C | `OfficialEmail` | Official email address used for Forgot Password OTP |
+| D | `MustChangePassword` | `TRUE` on first setup; flips to `FALSE` after password update |
+| E | `OtpCode` | Temporary 6-digit password-reset OTP |
+| F | `OtpExpiry` | Epoch millisecond expiration (10-minute validity) |
+| G | `UpdatedAt` | ISO timestamp of last update |
+
+### Tab 9: `ExamConfig` *(Live ESE Practical Mode Switch)*
+| Col | Header | Description |
+|---|---|---|
+| A | `ConfigKey` | `ESE_MODE` \| `ESE_TITLE` |
+| B | `ConfigValue` | `FALSE`/`TRUE` or Custom Exam Title string |
+| C | `UpdatedBy` | Faculty admin who updated the setting |
+| D | `UpdatedAt` | ISO timestamp of update |
+
+### Tab 10: `RubricTemplates` *(Custom Dynamic Rubrics for LAB & ESE)*
+| Col | Header | Description |
+|---|---|---|
+| A | `AssessmentType` | `LAB` \| `ESE` |
+| B | `CriterionId` | Criterion key identifier |
+| C | `Label` | Display criterion title |
+| D | `Description` | Evaluation expectation description |
+| E | `MaxMarks` | Numeric max marks for criterion |
+| F | `AutoRule` | `CODE_IMPLEMENTATION` \| `OUTPUT_TESTS` \| `DOCUMENTATION` \| `MANUAL` |
+| G | `DisplayOrder` | Display sort order |
 
 > **Excel & CSV Templates in `/public/`**:
-> - `/public/JavaLabPro_Database_Template.xls` (Complete 7-tab Excel workbook with Text `@` formatting)
+> - `/public/JavaLabPro_Database_Template.xls` (Complete 10-tab Excel workbook with Text `@` formatting)
 > - `/public/Faculty_Template.csv`
 > - `/public/Students_Template.csv`
 > - `/public/Exercises_Template.csv`
@@ -265,6 +324,8 @@ You can import the ready-made 7-tab Excel workbook **`/public/JavaLabPro_Databas
 > - `/public/Submissions_Template.csv`
 > - `/public/Violations_Template.csv`
 > - `/public/Evaluations_Template.csv`
+> - `/public/ExamConfig_Template.csv`
+> - `/public/RubricTemplates_Template.csv`
 
 ---
 
@@ -290,8 +351,8 @@ You can import the ready-made 7-tab Excel workbook **`/public/JavaLabPro_Databas
    - Open your existing `Java_Lab_Database` Google Sheet.
 2. Go to **Extensions > Apps Script**.
 3. Replace everything in `Code.gs` with the full contents of **`apps_script/Code.gs`** and click **Save**.
-4. In the Apps Script editor toolbar, select **`setupAllSheets`** from the function dropdown and click **Run** once (authorizing permissions when prompted) so all **7 tabs** (`Faculty`, `Students`, `Exercises`, `LoginAudit`, `Submissions`, `Violations`, `Evaluations`) exist with the exact updated headers.
-   - *(Note: If upgrading an existing sheet that already has older `Submissions`, `Violations`, or `Evaluations` headers, rename or delete those empty/test tabs before running `setupAllSheets()`, or add the new columns so column positions match `Code.gs`.)*
+4. In the Apps Script editor toolbar, select **`setupAllSheets`** from the function dropdown and click **Run** once (and **Review Permissions > Allow** if prompted) so all **10 tabs** (`Faculty`, `Students`, `Exercises`, `LoginAudit`, `Submissions`, `Violations`, `Evaluations`, `CoordinatorAuth`, `ExamConfig`, `RubricTemplates`) exist and **`MailApp.sendEmail` email-sending permissions** are authorized for Coordinator Forgot Password OTP emails.
+   - *(Note: Upgrading an existing sheet is non-destructive — `Code.gs` auto-appends new columns `Assessment Type` & `Rubric Details JSON` as needed, and running `setupAllSheets()` creates `ExamConfig` & `RubricTemplates` cleanly without overwriting existing rows.)*
 5. Deploy as a Web App:
    - First-time deploy: **Deploy > New deployment** > Type: **Web app** > Execute as: **Me** > Who has access: **Anyone** > **Deploy**.
    - Updating an existing Web App URL: **Deploy > Manage deployments > Edit (pencil icon) > Version: `New version` > Deploy** *(Critical: if you don't select **New version**, Google keeps serving the old script code!)*.
@@ -309,6 +370,7 @@ You can import the ready-made 7-tab Excel workbook **`/public/JavaLabPro_Databas
 3. Push to `main` (or trigger **Actions > Deploy to GitHub Pages > Run workflow**):
    - **Student Portal**: `https://<username>.github.io/<repo>/#/student`
    - **Faculty Portal**: `https://<username>.github.io/<repo>/#/faculty`
+   - **Course Coordinator Portal**: `https://<username>.github.io/<repo>/#/coordinator`
 
 ---
 
@@ -319,14 +381,14 @@ You can import the ready-made 7-tab Excel workbook **`/public/JavaLabPro_Databas
 │   └── workflows/
 │       └── deploy.yml                  # Automated GitHub Pages CI/CD workflow
 ├── apps_script/
-│   └── Code.gs                         # Google Apps Script REST API (7 tabs + Proxy Audit)
+│   └── Code.gs                         # Google Apps Script REST API (10 tabs + ESE Mode + Dynamic Rubrics)
 ├── java-runner/
 │   ├── Dockerfile                      # Eclipse Temurin OpenJDK 17 execution container
 │   ├── package.json                    # Runner dependencies (express, p-queue)
 │   └── server.js                       # Sandboxed execution API server
 ├── public/
 │   ├── 404.html                        # SPA redirect router for GitHub Pages
-│   ├── JavaLabPro_Database_Template.xls # Complete 7-sheet Excel template
+│   ├── JavaLabPro_Database_Template.xls # Complete 10-sheet Excel template
 │   ├── Exercises_Template.csv
 │   ├── Faculty_Template.csv
 │   ├── Students_Template.csv
@@ -334,24 +396,29 @@ You can import the ready-made 7-tab Excel workbook **`/public/JavaLabPro_Databas
 │   ├── Submissions_Template.csv
 │   ├── Violations_Template.csv
 │   ├── Evaluations_Template.csv
+│   ├── ExamConfig_Template.csv
+│   ├── RubricTemplates_Template.csv
 │   └── hits_logo.svg
 ├── src/
 │   ├── components/
 │   │   ├── AuthModal.tsx               # Student & Faculty verification (with silent audit hooks)
 │   │   ├── Header.tsx                  # Brand bar with portal indicator
 │   │   ├── UserManualModal.tsx         # SOP documentation
+│   │   ├── CoordinatorPortal/
+│   │   │   ├── CoordinatorAuthCard.tsx # Coordinator Login + Forgot Password Email OTP
+│   │   │   └── CoordinatorDashboard.tsx# Password Change + Course Handlers Add/Edit Directory
 │   │   ├── FacultyPortal/
 │   │   │   ├── AntiCheatingCenter.tsx  # LoginAudit Proxy Monitor + Proctoring Violations
-│   │   │   ├── ExerciseManager.tsx
+│   │   │   ├── ExerciseManager.tsx     # LAB & ESE Question Bank + Test Cases
 │   │   │   ├── ExportResultsModal.tsx
-│   │   │   ├── FacultyDashboard.tsx
-│   │   │   ├── LabRecordEvaluations.tsx # 10-Mark Rubric + Mail ID / Device Proxy Audit
-│   │   │   ├── RubricEvaluationModal.tsx
+│   │   │   ├── FacultyDashboard.tsx    # ESE Practical Mode Toggle + Portal Tabs
+│   │   │   ├── LabRecordEvaluations.tsx # LAB/ESE Rubric Builder + Evaluation Table
+│   │   │   ├── RubricEvaluationModal.tsx # Dynamic Criterion Scoring Modal
 │   │   │   ├── StudentRoster.tsx
 │   │   │   └── SubmissionsHub.tsx
 │   │   └── StudentPortal/
 │   │       ├── LabRecordModal.tsx      # HITS Official Practical Lab Record PDF Generator
-│   │       ├── StudentDashboard.tsx
+│   │       ├── StudentDashboard.tsx    # Auto-switches between LAB and ESE questions
 │   │       └── StudentIDE.tsx          # Java 17 IDE with paste & fullscreen guards
 │   ├── data/
 │   │   └── mockData.ts                 # Clean empty initial state
@@ -363,6 +430,7 @@ You can import the ready-made 7-tab Excel workbook **`/public/JavaLabPro_Databas
 │   ├── utils/
 │   │   ├── deviceAudit.ts              # Silent Browser/Device ID & session proxy audit helper
 │   │   ├── googleAuth.ts               # Optional Google Identity Services device Gmail capture
+│   │   ├── rubricScoring.ts            # Shared dynamic LAB & ESE rubric scoring helpers
 │   │   └── exportUtils.ts              # CSV and JSON assessment export engines
 │   ├── App.tsx                         # Main layout and route controller
 │   ├── index.css                       # Tailwind CSS and A4 Print media styles

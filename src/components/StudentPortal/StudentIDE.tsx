@@ -64,12 +64,16 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
   const [recentViolationWarning, setRecentViolationWarning] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Keep selectedEx in sync when exercises array updates with fresh data (e.g. after Google Sheets fetch)
+  // Keep selectedEx in sync when exercises array updates with fresh data or switches LAB/ESE mode
   useEffect(() => {
     if (selectedEx) {
       const fresh = exercises.find((e) => e.id === selectedEx.id);
-      if (fresh && fresh !== selectedEx) {
-        setSelectedEx(fresh);
+      if (fresh) {
+        if (fresh !== selectedEx) {
+          setSelectedEx(fresh);
+        }
+      } else {
+        setSelectedEx(activeExercises[0] || exercises[0]);
       }
     } else if (exercises.length > 0) {
       setSelectedEx(activeExercises[0] || exercises[0]);
@@ -248,6 +252,7 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
       studentName: currentUser.name,
       exerciseId: selectedEx.id,
       exerciseTitle: selectedEx.title,
+      assessmentType: selectedEx.assessmentType || 'LAB',
       code,
       status,
       publicPassed: pubRes.passed,
@@ -335,13 +340,13 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                 <FileCode className="w-4 h-4 text-indigo-600" />
-                Scheduled Exercises ({exercises.length})
+                Scheduled Questions ({exercises.length})
               </h3>
             </div>
             <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
               {exercises.length === 0 ? (
                 <div className="text-center py-5 text-slate-400 text-xs">
-                  No exercises scheduled yet.
+                  No questions scheduled yet.
                 </div>
               ) : (
                 exercises.map((ex) => {

@@ -65,6 +65,7 @@
    <Column ss:Width="260"/>
    <Column ss:Width="160"/>
    <Column ss:Width="90"/>
+   <Column ss:Width="120"/>
    <Row>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Exercise ID</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Title</Data></Cell>
@@ -78,6 +79,7 @@
     <Cell ss:StyleID="Header"><Data ss:Type="String">Starter Code</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Category</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Difficulty</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Assessment Type</Data></Cell>
    </Row>
   </Table>
  </Worksheet>
@@ -119,6 +121,7 @@
    <Column ss:Width="140"/>
    <Column ss:Width="220"/>
    <Column ss:Width="280"/>
+   <Column ss:Width="120"/>
    <Row>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Timestamp</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Official Email</Data></Cell>
@@ -132,6 +135,7 @@
     <Cell ss:StyleID="Header"><Data ss:Type="String">Device ID</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Multi-Student Flag</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Source Code</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Assessment Type</Data></Cell>
    </Row>
   </Table>
  </Worksheet>
@@ -181,6 +185,8 @@
    <Column ss:Width="220"/>
    <Column ss:Width="220"/>
    <Column ss:Width="150"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="260"/>
    <Row>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Timestamp</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Official Email</Data></Cell>
@@ -198,6 +204,149 @@
     <Cell ss:StyleID="Header"><Data ss:Type="String">Multi-Student Flag</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Faculty Remarks</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Evaluated By</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Assessment Type</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Rubric Details JSON</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="CoordinatorAuth">
+  <Table>
+   <Column ss:Width="130"/>
+   <Column ss:Width="260"/>
+   <Column ss:Width="220"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="160"/>
+   <Row>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Username</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">PasswordHash</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">OfficialEmail</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">MustChangePassword</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">OtpCode</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">OtpExpiry</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">UpdatedAt</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="ExamConfig">
+  <Table>
+   <Column ss:Width="140"/>
+   <Column ss:Width="240"/>
+   <Column ss:Width="160"/>
+   <Column ss:Width="180"/>
+   <Row>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">ConfigKey</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">ConfigValue</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">UpdatedBy</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">UpdatedAt</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">ESE_MODE</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">FALSE</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">System</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String"></Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">ESE_TITLE</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">End Semester Practical Examination</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">System</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String"></Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="RubricTemplates">
+  <Table>
+   <Column ss:Width="120"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="200"/>
+   <Column ss:Width="280"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="160"/>
+   <Column ss:Width="90"/>
+   <Row>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">AssessmentType</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">CriterionId</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Label</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Description</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">MaxMarks</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">AutoRule</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">DisplayOrder</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">LAB</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">conceptImplemented</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Concept Implemented</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Correct Java OOP logic, Scanner, and control structures</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">5</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">CODE_IMPLEMENTATION</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">1</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">LAB</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">namingConventions</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Naming Conventions</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Standard camelCase variables and PascalCase classes</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">1</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">DOCUMENTATION</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">2</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">LAB</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">documentation</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Documentation</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Comments, Aim, and written algorithm / procedure</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">1</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">DOCUMENTATION</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">3</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">LAB</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">output</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Output Accuracy</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Public and hidden test case execution passes</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">3</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">OUTPUT_TESTS</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">4</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">ESE</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">algorithm</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Algorithm &amp; Problem Analysis</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Logical approach, edge case handling, and class structure</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">10</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">DOCUMENTATION</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">1</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">ESE</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">implementation</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Program Implementation</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Java 17 syntax, OOP design, and modular code quality</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">20</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">CODE_IMPLEMENTATION</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">2</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">ESE</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">execution</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Execution &amp; Test Output</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Public and hidden private test case verification</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">15</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">OUTPUT_TESTS</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">3</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">ESE</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">viva</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Viva-Voce &amp; Explanation</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Oral examination and code defense during practical exam</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">5</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">MANUAL</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">4</Data></Cell>
    </Row>
   </Table>
  </Worksheet>

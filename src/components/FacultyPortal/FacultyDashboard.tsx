@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import {
+  AssessmentType,
+  DynamicRubricConfig,
+  ExamModeConfig,
   Exercise,
   Submission,
   Violation,
@@ -22,6 +25,7 @@ import {
   RefreshCw,
   Award,
   FileText,
+  GraduationCap,
 } from 'lucide-react';
 import { ExportResultsModal } from './ExportResultsModal';
 
@@ -33,10 +37,14 @@ interface FacultyDashboardProps {
   students: StudentRecord[];
   evaluations: StudentLabRecordSubmission[];
   loginAudit?: LoginAuditRecord[];
+  examConfig: ExamModeConfig;
+  rubricConfig: DynamicRubricConfig;
+  onSaveExamConfig: (config: ExamModeConfig) => Promise<void> | void;
+  onSaveRubricConfig: (config: DynamicRubricConfig) => Promise<void> | void;
   onSaveExercise: (exercise: Exercise) => void;
   onAddStudent: (student: StudentRecord) => void;
   onSaveEvaluation: (evaluation: StudentLabRecordSubmission) => void;
-  onAutoEvaluateAll: () => void;
+  onAutoEvaluateAll: (assessmentType: AssessmentType) => void;
   onRefreshExercises?: () => void;
 }
 
@@ -48,6 +56,10 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
   students,
   evaluations,
   loginAudit = [],
+  examConfig,
+  rubricConfig,
+  onSaveExamConfig,
+  onSaveRubricConfig,
   onSaveExercise,
   onAddStudent,
   onSaveEvaluation,
@@ -56,6 +68,38 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'evaluations' | 'exercises' | 'submissions' | 'violations' | 'roster'>('evaluations');
   const [showExportModal, setShowExportModal] = useState(false);
+  const [eseTitleDraft, setEseTitleDraft] = useState(examConfig.eseTitle || 'End Semester Practical Examination');
+  const [togglingEse, setTogglingEse] = useState(false);
+
+  React.useEffect(() => {
+    setEseTitleDraft(examConfig.eseTitle || 'End Semester Practical Examination');
+  }, [examConfig.eseTitle]);
+
+  const handleToggleEseMode = async () => {
+    setTogglingEse(true);
+    try {
+      await onSaveExamConfig({
+        eseEnabled: !examConfig.eseEnabled,
+        eseTitle: eseTitleDraft.trim() || 'End Semester Practical Examination',
+        updatedBy: currentUser.name || currentUser.email,
+      });
+    } finally {
+      setTogglingEse(false);
+    }
+  };
+
+  const handleUpdateEseTitleOnly = async () => {
+    setTogglingEse(true);
+    try {
+      await onSaveExamConfig({
+        eseEnabled: examConfig.eseEnabled,
+        eseTitle: eseTitleDraft.trim() || 'End Semester Practical Examination',
+        updatedBy: currentUser.name || currentUser.email,
+      });
+    } finally {
+      setTogglingEse(false);
+    }
+  };
 
   const passedCount = submissions.filter((s) => s.status === 'ALL TEST CASES PASSED').length;
   const passRate = submissions.length > 0 ? Math.round((passedCount / submissions.length) * 100) : 0;
@@ -112,6 +156,82 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
               <div className="text-[11px] text-slate-500">Class Pass Rate</div>
               <div className="text-lg font-black text-emerald-600">{passRate}%</div>
             </div>
+          </div>
+        </div>
+
+        {/* ESE Practical Mode Live Control Bar */}
+        <div
+          className={`mt-5 rounded-xl border p-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 transition ${
+            examConfig.eseEnabled
+              ? 'bg-rose-50/90 border-rose-300'
+              : 'bg-white/90 border-slate-200'
+          }`}
+        >
+          <div className="flex items-start sm:items-center gap-3">
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                examConfig.eseEnabled ? 'bg-rose-600 text-white' : 'bg-indigo-100 text-indigo-700'
+              }`}
+            >
+              <GraduationCap className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black text-slate-900">
+                  Student Exam Visibility Mode:
+                </span>
+                <span
+                  className={`text-[10px] font-black px-2 py-0.5 rounded-full border uppercase ${
+                    examConfig.eseEnabled
+                      ? 'bg-rose-100 text-rose-800 border-rose-300'
+                      : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                  }`}
+                >
+                  {examConfig.eseEnabled ? 'LIVE ESE PRACTICAL EXAM ON' : 'REGULAR LAB EXERCISES MODE'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                {examConfig.eseEnabled
+                  ? 'Students see ONLY ESE Practical questions in the IDE (Lab Record PDF is hidden during exam).'
+                  : 'Students see regular Lab Exercises and their Lab Record PDF workflow.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              value={eseTitleDraft}
+              onChange={(e) => setEseTitleDraft(e.target.value)}
+              placeholder="ESE Exam Title (e.g. BCB52003 ESE Practical)"
+              className="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 w-60 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+            {eseTitleDraft.trim() !== (examConfig.eseTitle || '').trim() && (
+              <button
+                type="button"
+                disabled={togglingEse}
+                onClick={handleUpdateEseTitleOnly}
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition disabled:opacity-60"
+              >
+                Save Title
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={togglingEse}
+              onClick={handleToggleEseMode}
+              className={`px-4 py-1.5 rounded-xl text-xs font-black text-white shadow-xs transition disabled:opacity-60 ${
+                examConfig.eseEnabled
+                  ? 'bg-slate-800 hover:bg-slate-900'
+                  : 'bg-rose-600 hover:bg-rose-700'
+              }`}
+            >
+              {togglingEse
+                ? 'Updating...'
+                : examConfig.eseEnabled
+                ? 'Disable ESE (Return to Lab Mode)'
+                : 'Enable ESE Exam Mode'}
+            </button>
           </div>
         </div>
 
@@ -273,6 +393,9 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
             evaluations={evaluations}
             loginAudit={loginAudit}
             currentUser={currentUser}
+            rubricConfig={rubricConfig}
+            examConfig={examConfig}
+            onSaveRubricConfig={onSaveRubricConfig}
             onSaveEvaluation={onSaveEvaluation}
             onAutoEvaluateAll={onAutoEvaluateAll}
             onRefreshFromSheet={onRefreshExercises}

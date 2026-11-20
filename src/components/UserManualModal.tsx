@@ -14,12 +14,13 @@ import {
   ShieldAlert,
   Clock,
   Code2,
+  UserCog,
 } from 'lucide-react';
 
 interface UserManualModalProps {
   isOpen: boolean;
   onClose: () => void;
-  role: 'FACULTY' | 'STUDENT';
+  role: 'FACULTY' | 'STUDENT' | 'COORDINATOR';
 }
 
 export const UserManualModal: React.FC<UserManualModalProps> = ({
@@ -34,6 +35,7 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
   };
 
   const isFaculty = role === 'FACULTY';
+  const isCoordinator = role === 'COORDINATOR';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-2 sm:p-4 print:p-0 print:bg-white print:static">
@@ -44,30 +46,46 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
           <div className="flex items-center gap-3">
             <div
               className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-xs ${
-                isFaculty ? 'bg-indigo-600' : 'bg-emerald-600'
+                isCoordinator ? 'bg-violet-600' : isFaculty ? 'bg-indigo-600' : 'bg-emerald-600'
               }`}
             >
-              {isFaculty ? <Users className="w-5 h-5" /> : <GraduationCap className="w-5 h-5" />}
+              {isCoordinator ? (
+                <UserCog className="w-5 h-5" />
+              ) : isFaculty ? (
+                <Users className="w-5 h-5" />
+              ) : (
+                <GraduationCap className="w-5 h-5" />
+              )}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-slate-900">
-                  {isFaculty
+                  {isCoordinator
+                    ? 'Course Coordinator Administration Manual'
+                    : isFaculty
                     ? 'Faculty Examination & Administration Manual'
                     : 'Student Examination Manual & SOP Guide'}
                 </h2>
                 <span
                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                    isFaculty
+                    isCoordinator
+                      ? 'bg-violet-100 text-violet-800 border border-violet-200'
+                      : isFaculty
                       ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
                       : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                   }`}
                 >
-                  {isFaculty ? 'Faculty Portal Guide' : 'Student Portal Guide'}
+                  {isCoordinator
+                    ? 'Coordinator Portal Guide'
+                    : isFaculty
+                    ? 'Faculty Portal Guide'
+                    : 'Student Portal Guide'}
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                {isFaculty
+                {isCoordinator
+                  ? 'Standard operating procedures for managing authorized course teachers, default password security, and OTP recovery.'
+                  : isFaculty
                   ? 'Standard operating procedures for scheduling, roster management, marksheet exports, and proctoring review.'
                   : 'Operational guidelines for coding, testing, anti-cheating compliance, and practical record generation.'}
               </p>
@@ -78,7 +96,11 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
             <button
               onClick={handlePrint}
               className={`px-3.5 py-1.5 rounded-xl text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition ${
-                isFaculty ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                isCoordinator
+                  ? 'bg-violet-600 hover:bg-violet-700'
+                  : isFaculty
+                  ? 'bg-indigo-600 hover:bg-indigo-700'
+                  : 'bg-emerald-600 hover:bg-emerald-700'
               }`}
               title="Print to PDF or physical printer"
             >
@@ -96,7 +118,57 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
 
         {/* Document Content Body */}
         <div className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-8 text-slate-800 text-sm leading-relaxed print:overflow-visible print:p-0 print:text-black print:text-xs">
-          {isFaculty ? (
+          {isCoordinator ? (
+            /* ======================================================== */
+            /*                COORDINATOR USER MANUAL ONLY              */
+            /* ======================================================== */
+            <>
+              <div className="border-b-2 border-violet-500/40 pb-6 print:border-black">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-violet-600 print:text-black">
+                      Course Coordinator Guide
+                    </span>
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1 print:text-black print:text-xl">
+                      JavaLabPro: Course Coordinator &amp; Handler Directory Manual
+                    </h1>
+                    <p className="text-slate-500 text-xs mt-1 print:text-gray-700">
+                      Managing Course Handlers in the Faculty Sheet, First-Login Password Security, and Email OTP Recovery
+                    </p>
+                  </div>
+                  <div className="text-right hidden sm:block">
+                    <div className="text-xs font-bold text-violet-600 print:text-black">Portal: /#/coordinator</div>
+                    <div className="text-[11px] text-slate-500 print:text-gray-600">Default User: coordinator</div>
+                    <div className="text-[11px] text-emerald-600 print:text-black font-semibold mt-0.5">Sheet Tab: Faculty &amp; CoordinatorAuth</div>
+                  </div>
+                </div>
+              </div>
+
+              <section className="space-y-3">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-1">
+                  <span className="w-6 h-6 rounded-md bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold">1</span>
+                  Authentication, Password Change &amp; OTP Recovery
+                </h2>
+                <ul className="text-xs list-disc list-inside space-y-1.5 text-slate-700">
+                  <li><strong>Default Credentials:</strong> Username <code className="font-mono font-bold">coordinator</code> and initial password <code className="font-mono font-bold">Admin@123</code>.</li>
+                  <li><strong>First-Time Login Security:</strong> After signing in for the first time, use the prompted <strong>Change Default Password</strong> panel to set a new password and register your Official Email ID for password recovery.</li>
+                  <li><strong>Forgot Password (Email OTP):</strong> Click <strong>Forgot Password?</strong> on the sign-in screen, enter your Official Email ID, verify the 6-digit OTP sent to your inbox, and set a new password.</li>
+                </ul>
+              </section>
+
+              <section className="space-y-3">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-1">
+                  <span className="w-6 h-6 rounded-md bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold">2</span>
+                  Adding &amp; Editing Course Handlers (Faculty Sheet)
+                </h2>
+                <ul className="text-xs list-disc list-inside space-y-1.5 text-slate-700">
+                  <li><strong>Add Course Teacher:</strong> Enter <strong>Email</strong>, <strong>Name</strong>, and <strong>Department</strong>, then click <strong>Add Course Handler</strong> to save directly to the <code className="font-mono">Faculty</code> sheet tab.</li>
+                  <li><strong>Edit Existing Teacher:</strong> Click <strong>Edit User</strong> beside any teacher row to load their Email, Name, and Department into the form, update the values, and click <strong>Save Changes</strong> to overwrite the row in Google Sheets.</li>
+                  <li><strong>Live Faculty Sign-In Access:</strong> Any course teacher added or updated here can immediately sign in on <code className="font-mono">/#/faculty</code>.</li>
+                </ul>
+              </section>
+            </>
+          ) : isFaculty ? (
             /* ======================================================== */
             /*                FACULTY USER MANUAL ONLY                  */
             /* ======================================================== */
@@ -343,7 +415,13 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
           {/* Footer sign-off */}
           <div className="border-t border-slate-200 pt-4 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 print:text-black print:border-black">
             <div>JavaLabPro — BCB52003 Object Oriented Programming Lab</div>
-            <div>{isFaculty ? 'Faculty Management Portal' : 'Student Examination Portal'}</div>
+            <div>
+              {isCoordinator
+                ? 'Course Coordinator Portal'
+                : isFaculty
+                ? 'Faculty Management Portal'
+                : 'Student Examination Portal'}
+            </div>
           </div>
         </div>
       </div>

@@ -7,6 +7,10 @@ import {
   INITIAL_VIOLATIONS,
 } from './data/mockData';
 import {
+  AssessmentType,
+  DEFAULT_RUBRIC_CONFIG,
+  DynamicRubricConfig,
+  ExamModeConfig,
   Exercise,
   FacultyRecord,
   StudentRecord,
@@ -20,18 +24,27 @@ import {
 import { Header } from './components/Header';
 import { FacultyDashboard } from './components/FacultyPortal/FacultyDashboard';
 import { StudentDashboard } from './components/StudentPortal/StudentDashboard';
+import { CoordinatorAuthCard } from './components/CoordinatorPortal/CoordinatorAuthCard';
+import { CoordinatorDashboard } from './components/CoordinatorPortal/CoordinatorDashboard';
 import { AuthModal } from './components/AuthModal';
 import { UserManualModal } from './components/UserManualModal';
-import { CheckCircle2, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, ShieldAlert, X } from 'lucide-react';
 import { SheetService } from './services/sheetService';
 import { getOrCreateDeviceId, getSavedPersonalEmail } from './utils/deviceAudit';
+import {
+  buildLegacyRubricBreakdown,
+  computeAutoDynamicScores,
+} from './utils/rubricScoring';
 
-function detectPortalFromUrl(): 'faculty' | 'student' {
+function detectPortalFromUrl(): 'faculty' | 'student' | 'coordinator' {
   if (typeof window === 'undefined') return 'student';
   const path = window.location.pathname.toLowerCase();
   const hash = window.location.hash.toLowerCase();
   const search = window.location.search.toLowerCase();
 
+  if (path.includes('/coordinator') || hash.includes('coordinator') || search.includes('coordinator')) {
+    return 'coordinator';
+  }
   if (path.includes('/faculty') || hash.includes('faculty') || search.includes('faculty')) {
     return 'faculty';
   }
@@ -43,31 +56,39 @@ function detectPortalFromUrl(): 'faculty' | 'student' {
 
 const FACULTY_STORAGE_KEY = 'javalab_pro_user_faculty';
 const STUDENT_STORAGE_KEY = 'javalab_pro_user_student';
+const COORDINATOR_STORAGE_KEY = 'javalab_pro_user_coordinator';
 
 export default function App() {
   const initialPortal = detectPortalFromUrl();
 
   // Navigation & User State
-  const [currentTab, setCurrentTab] = useState<'faculty' | 'student'>(initialPortal);
+  const [currentTab, setCurrentTab] = useState<'faculty' | 'student' | 'coordinator'>(initialPortal);
 
-  const getStoredUser = (portal: 'faculty' | 'student'): User => {
+  const getStoredUser = (portal: 'faculty' | 'student' | 'coordinator'): User => {
     try {
-      const key = portal === 'faculty' ? FACULTY_STORAGE_KEY : STUDENT_STORAGE_KEY;
+      const key =
+        portal === 'coordinator'
+          ? COORDINATOR_STORAGE_KEY
+          : portal === 'faculty'
+          ? FACULTY_STORAGE_KEY
+          : STUDENT_STORAGE_KEY;
       const saved = localStorage.getItem(key);
       if (saved) {
         const parsed = JSON.parse(saved) as User;
-        if (parsed && parsed.email && parsed.verifiedViaSheet === true) {
+        const expectedRole =
+          portal === 'coordinator' ? 'COORDINATOR' : portal === 'faculty' ? 'FACULTY' : 'STUDENT';
+        if (parsed && parsed.email && parsed.verifiedViaSheet === true && parsed.role === expectedRole) {
           return parsed;
         }
       }
     } catch (e) {}
 
     return {
-      role: portal === 'faculty' ? 'FACULTY' : 'STUDENT',
+      role: portal === 'coordinator' ? 'COORDINATOR' : portal === 'faculty' ? 'FACULTY' : 'STUDENT',
       email: '',
       name: '',
       regNo: '',
-      department: 'Department of Computer Applications',
+      department: portal === 'coordinator' ? 'Course Administration' : 'Department of Computer Applications',
       verifiedViaSheet: false,
     };
   };
@@ -90,7 +111,7 @@ export default function App() {
     };
   }, []);
 
-  const handleSelectTab = (tab: 'faculty' | 'student') => {
+  const handleSelectTab = (tab: 'faculty' | 'student' | 'coordinator') => {
     setCurrentTab(tab);
     window.location.hash = '#/' + tab;
     if (tab === 'student' && currentUser.role === 'FACULTY' && currentUser.verifiedViaSheet) {
@@ -104,13 +125,19 @@ export default function App() {
   const [submissions, setSubmissions] = useState<Submission[]>(INITIAL_SUBMISSIONS);
   const [violations, setViolations] = useState<Violation[]>(INITIAL_VIOLATIONS);
   const [students, setStudents] = useState<StudentRecord[]>(INITIAL_STUDENTS);
-  const [faculty] = useState<FacultyRecord[]>(INITIAL_FACULTY);
+  const [faculty, setFaculty] = useState<FacultyRecord[]>(INITIAL_FACULTY);
 
   const EVALUATIONS_STORAGE_KEY = 'javalab_pro_evaluations';
   const [evaluations, setEvaluations] = useState<StudentLabRecordSubmission[]>([]);
 
   const LOGIN_AUDIT_STORAGE_KEY = 'javalab_pro_login_audit';
   const [loginAudit, setLoginAudit] = useState<LoginAuditRecord[]>([]);
+
+  const [examConfig, setExamConfig] = useState<ExamModeConfig>({
+    eseEnabled: false,
+    eseTitle: 'End Semester Practical Examination',
+  });
+  const [rubricConfig, setRubricConfig] = useState<DynamicRubricConfig>(DEFAULT_RUBRIC_CONFIG);
 
   // System Settings read exclusively from environment variables (.env / GitHub Actions Variables)
   const [settings] = useState<SystemSettings>(() => {
@@ -136,15 +163,25 @@ export default function App() {
     };
   });
 
-  // Sync exercises, students, evaluations, & loginAudit directly from Google Sheets
+  // Sync exercises, faculty, students, evaluations, submissions, loginAudit, examConfig & rubricConfig directly from Google Sheets
   React.useEffect(() => {
     if (settings.googleSheetsUrl && settings.googleSheetsUrl.startsWith('http')) {
       SheetService.fetchActiveExercises(settings.googleSheetsUrl).then((fetched) => {
         setExercises(fetched);
       });
 
+      SheetService.fetchFaculty(settings.googleSheetsUrl).then((fetchedFaculty) => {
+        setFaculty(fetchedFaculty);
+      });
+
       SheetService.fetchStudents(settings.googleSheetsUrl).then((fetchedStudents) => {
         setStudents(fetchedStudents);
+      });
+
+      SheetService.fetchSubmissions(settings.googleSheetsUrl).then((fetchedSubs) => {
+        if (fetchedSubs.length > 0) {
+          setSubmissions(fetchedSubs);
+        }
       });
 
       SheetService.fetchEvaluations(settings.googleSheetsUrl).then((fetchedEvals) => {
@@ -159,6 +196,14 @@ export default function App() {
         try {
           localStorage.setItem(LOGIN_AUDIT_STORAGE_KEY, JSON.stringify(fetchedAudit));
         } catch (e) {}
+      });
+
+      SheetService.fetchExamConfig(settings.googleSheetsUrl).then((cfg) => {
+        setExamConfig(cfg);
+      });
+
+      SheetService.fetchRubricTemplates(settings.googleSheetsUrl).then((tmpl) => {
+        setRubricConfig(tmpl);
       });
     }
   }, [settings.googleSheetsUrl]);
@@ -215,71 +260,183 @@ export default function App() {
     showToast(`Student ${newStu.name} (${newStu.regNo}) added locally.`);
   };
 
+  // Coordinator: Refresh Course Handlers (Faculty tab) from Google Sheet
+  const handleRefreshFaculty = async () => {
+    if (!settings.googleSheetsUrl) {
+      showToast('Google Sheets URL is not configured.', 'warn');
+      return;
+    }
+    const freshFaculty = await SheetService.fetchFaculty(settings.googleSheetsUrl);
+    setFaculty(freshFaculty);
+    showToast(`Synced ${freshFaculty.length} course teacher(s) from Google Sheet.`);
+  };
+
+  // Coordinator: Add or Edit Course Handler in Google Sheet Faculty tab
+  const handleSaveFaculty = async (
+    handler: FacultyRecord,
+    originalEmail?: string
+  ): Promise<{ success: boolean; message?: string; error?: string }> => {
+    if (!settings.googleSheetsUrl) {
+      return { success: false, error: 'Google Sheets URL is not configured.' };
+    }
+    const res = await SheetService.saveFaculty(settings.googleSheetsUrl, handler, originalEmail);
+    if (res.success) {
+      const freshFaculty = await SheetService.fetchFaculty(settings.googleSheetsUrl);
+      if (freshFaculty.length > 0) {
+        setFaculty(freshFaculty);
+      } else {
+        setFaculty((prev) => {
+          const targetKey = (originalEmail || handler.email).toLowerCase();
+          const idx = prev.findIndex((f) => f.email.toLowerCase() === targetKey);
+          if (idx !== -1) {
+            return prev.map((f, i) => (i === idx ? handler : f));
+          }
+          return [...prev, handler];
+        });
+      }
+      showToast(res.message || `Saved ${handler.name} to Faculty sheet!`);
+    }
+    return res;
+  };
+
+  const handleUpdateCoordinatorUser = (updated: User) => {
+    setCurrentUser(updated);
+    try {
+      localStorage.setItem(COORDINATOR_STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {}
+    showToast('Coordinator password & profile updated in Google Sheet!');
+  };
+
   // Faculty: Manually trigger re-sync from Google Sheets
   const handleRefreshFromSheets = async () => {
     if (settings.googleSheetsUrl) {
-      showToast('Syncing exercises, students, evaluations & login audit from Google Sheet...');
-      const [fresh, freshStudents, freshEvals, freshAudit] = await Promise.all([
-        SheetService.fetchActiveExercises(settings.googleSheetsUrl),
-        SheetService.fetchStudents(settings.googleSheetsUrl),
-        SheetService.fetchEvaluations(settings.googleSheetsUrl),
-        SheetService.fetchLoginAudit(settings.googleSheetsUrl),
-      ]);
+      showToast('Syncing exercises, submissions, evaluations, rubrics & ESE config from Google Sheet...');
+      const [fresh, freshFaculty, freshStudents, freshSubs, freshEvals, freshAudit, freshExamCfg, freshRubrics] =
+        await Promise.all([
+          SheetService.fetchActiveExercises(settings.googleSheetsUrl),
+          SheetService.fetchFaculty(settings.googleSheetsUrl),
+          SheetService.fetchStudents(settings.googleSheetsUrl),
+          SheetService.fetchSubmissions(settings.googleSheetsUrl),
+          SheetService.fetchEvaluations(settings.googleSheetsUrl),
+          SheetService.fetchLoginAudit(settings.googleSheetsUrl),
+          SheetService.fetchExamConfig(settings.googleSheetsUrl),
+          SheetService.fetchRubricTemplates(settings.googleSheetsUrl),
+        ]);
       setExercises(fresh);
+      setFaculty(freshFaculty);
       setStudents(freshStudents);
+      if (freshSubs.length > 0) setSubmissions(freshSubs);
       setEvaluations(freshEvals);
       setLoginAudit(freshAudit);
+      setExamConfig(freshExamCfg);
+      setRubricConfig(freshRubrics);
       try {
         localStorage.setItem(EVALUATIONS_STORAGE_KEY, JSON.stringify(freshEvals));
         localStorage.setItem(LOGIN_AUDIT_STORAGE_KEY, JSON.stringify(freshAudit));
       } catch (e) {}
 
       showToast(
-        `Synced ${fresh.length} exercise(s), ${freshStudents.length} student(s), ${freshEvals.length} evaluation(s), ${freshAudit.length} login audit row(s)!`
+        `Synced ${fresh.length} question(s), ${freshStudents.length} student(s), ${freshEvals.length} evaluation(s)!`
       );
     } else {
       showToast('Google Sheets URL is not configured.', 'warn');
     }
   };
 
-  // Faculty: Save Evaluation
+  // Faculty: Save Exam Mode (LAB vs ESE Practical)
+  const handleSaveExamConfig = async (nextConfig: ExamModeConfig) => {
+    setExamConfig(nextConfig);
+    if (settings.googleSheetsUrl) {
+      const res = await SheetService.saveExamConfig(settings.googleSheetsUrl, nextConfig);
+      if (res.success) {
+        showToast(res.message || `ESE Practical Mode ${nextConfig.eseEnabled ? 'ENABLED' : 'DISABLED'}`);
+      } else {
+        showToast(res.error || 'Updated locally. Check Apps Script deployment.', 'warn');
+      }
+    } else {
+      showToast(`ESE Practical Mode ${nextConfig.eseEnabled ? 'ENABLED' : 'DISABLED'} locally.`);
+    }
+  };
+
+  // Faculty: Save Customized LAB & ESE Rubrics
+  const handleSaveRubricConfig = async (nextRubrics: DynamicRubricConfig) => {
+    setRubricConfig(nextRubrics);
+    if (settings.googleSheetsUrl) {
+      const res = await SheetService.saveRubricTemplates(settings.googleSheetsUrl, nextRubrics);
+      if (res.success) {
+        showToast(res.message || 'LAB & ESE rubrics saved to Google Sheet!');
+      } else {
+        showToast(res.error || 'Saved locally. Check Apps Script deployment.', 'warn');
+      }
+    } else {
+      showToast('LAB & ESE rubrics updated locally.');
+    }
+  };
+
+  // Faculty: Save Evaluation (scoped cleanly by regNo + assessmentType)
   const handleSaveEvaluation = async (evaluation: StudentLabRecordSubmission) => {
+    const evalType: AssessmentType = evaluation.assessmentType === 'ESE' ? 'ESE' : 'LAB';
+    const normalizedEval: StudentLabRecordSubmission = {
+      ...evaluation,
+      assessmentType: evalType,
+    };
+
     setEvaluations((prev) => {
-      const idx = prev.findIndex((e) => e.regNo === evaluation.regNo);
-      const updated = idx !== -1
-        ? prev.map((item, i) => (i === idx ? evaluation : item))
-        : [evaluation, ...prev];
+      const idx = prev.findIndex(
+        (e) =>
+          e.regNo.trim().toUpperCase() === normalizedEval.regNo.trim().toUpperCase() &&
+          (e.assessmentType === 'ESE' ? 'ESE' : 'LAB') === evalType
+      );
+      const updated =
+        idx !== -1
+          ? prev.map((item, i) => (i === idx ? normalizedEval : item))
+          : [normalizedEval, ...prev];
       try {
         localStorage.setItem(EVALUATIONS_STORAGE_KEY, JSON.stringify(updated));
       } catch (e) {}
       return updated;
     });
 
-    showToast(`Evaluation for ${evaluation.studentName} (${evaluation.regNo}) saved!`);
+    showToast(`${evalType} evaluation for ${normalizedEval.studentName} (${normalizedEval.regNo}) saved!`);
 
     if (settings.googleSheetsUrl) {
-      const res = await SheetService.saveEvaluation(settings.googleSheetsUrl, evaluation);
+      const res = await SheetService.saveEvaluation(settings.googleSheetsUrl, normalizedEval);
       if (res.success) {
-        showToast(`Synced evaluation to Google Sheet Evaluations tab!`);
+        showToast(`Synced ${evalType} evaluation to Google Sheet Evaluations tab!`);
       } else {
         showToast(`Saved locally. ${res.message || 'Check Apps Script deployment.'}`, 'warn');
       }
     }
   };
 
-  // Faculty: Auto-Evaluate All pending student lab records
-  const handleAutoEvaluateAll = async () => {
-    const evaluatedMap = new Map<string, StudentLabRecordSubmission>(
-      evaluations.map((e) => [e.regNo.trim().toUpperCase(), e])
+  // Faculty: Auto-Evaluate All pending records for a given assessmentType ('LAB' or 'ESE')
+  const handleAutoEvaluateAll = async (assessmentType: AssessmentType) => {
+    const criteria = rubricConfig[assessmentType] || DEFAULT_RUBRIC_CONFIG[assessmentType];
+    const modeExercises = exercises.filter(
+      (ex) => (ex.assessmentType === 'ESE' ? 'ESE' : 'LAB') === assessmentType
+    );
+    const modeExerciseIds = new Set(modeExercises.map((e) => e.id));
+    const modeSubmissions = submissions.filter((s) => {
+      if (s.assessmentType === 'ESE' || s.assessmentType === 'LAB') {
+        return s.assessmentType === assessmentType;
+      }
+      if (modeExerciseIds.has(s.exerciseId)) return true;
+      return assessmentType === 'LAB';
+    });
+    const modeEvaluations = evaluations.filter(
+      (e) => (e.assessmentType === 'ESE' ? 'ESE' : 'LAB') === assessmentType
     );
 
-    // Collect all candidate records from submitted evaluations, code submissions, and roster
+    const evaluatedMap = new Map<string, StudentLabRecordSubmission>(
+      modeEvaluations.map((e) => [e.regNo.trim().toUpperCase(), e])
+    );
+
     const candidateMap = new Map<
       string,
       { regNo: string; name: string; email: string; department: string }
     >();
 
-    evaluations.forEach((ev) => {
+    modeEvaluations.forEach((ev) => {
       const reg = (ev.regNo || '').trim().toUpperCase();
       if (!reg) return;
       candidateMap.set(reg, {
@@ -290,7 +447,7 @@ export default function App() {
       });
     });
 
-    submissions.forEach((sub) => {
+    modeSubmissions.forEach((sub) => {
       const reg = (sub.regNo || '').trim().toUpperCase();
       if (!reg || candidateMap.has(reg)) return;
       candidateMap.set(reg, {
@@ -301,16 +458,18 @@ export default function App() {
       });
     });
 
-    students.forEach((stu) => {
-      const reg = (stu.regNo || '').trim().toUpperCase();
-      if (!reg || candidateMap.has(reg)) return;
-      candidateMap.set(reg, {
-        regNo: reg,
-        name: stu.name || `Student ${reg}`,
-        email: stu.email || '',
-        department: stu.department || 'Department of Computer Applications',
+    if (assessmentType === 'LAB') {
+      students.forEach((stu) => {
+        const reg = (stu.regNo || '').trim().toUpperCase();
+        if (!reg || candidateMap.has(reg)) return;
+        candidateMap.set(reg, {
+          regNo: reg,
+          name: stu.name || `Student ${reg}`,
+          email: stu.email || '',
+          department: stu.department || 'Department of Computer Applications',
+        });
       });
-    });
+    }
 
     const updatedEvals: StudentLabRecordSubmission[] = [...evaluations];
     let evaluatedCount = 0;
@@ -324,34 +483,27 @@ export default function App() {
           current.status === 'APPROVED');
       if (alreadyApproved) continue;
 
-      const stuSubmissions = submissions.filter(
+      const stuSubmissions = modeSubmissions.filter(
         (s) => s.regNo.trim().toUpperCase() === candidate.regNo
       );
       const stuViolations = violations.filter(
         (v) => v.regNo.trim().toUpperCase() === candidate.regNo
       );
-      const passedExerciseIds = new Set(
-        stuSubmissions.filter((s) => s.score === 100).map((s) => s.exerciseId)
+
+      const { scores, total, maxTotal, passedCount } = computeAutoDynamicScores(
+        criteria,
+        modeExercises,
+        stuSubmissions,
+        stuViolations,
+        Boolean(current)
       );
-      const passedCount = passedExerciseIds.size;
-      const totalEx = Math.max(1, exercises.length);
-      const allPassed = passedCount >= exercises.length && exercises.length > 0;
-
-      // Rubric: Concept (5), Naming (1), Documentation (1), Output (3)
-      let concept = allPassed ? 5 : Math.min(5, Math.max(2, Math.round((passedCount / totalEx) * 5)));
-      const naming = passedCount > 0 || current ? 1 : 0.5;
-      const doc = passedCount > 0 || current ? 1 : 0.5;
-      const output = allPassed ? 3 : Math.min(3, Math.max(1, Math.round((passedCount / totalEx) * 3)));
-
-      if (stuViolations.some((v) => v.severity === 'high')) {
-        concept = Math.max(1, concept - 1);
-      }
-      const total = Number((concept + naming + doc + output).toFixed(1));
+      const rubricData = buildLegacyRubricBreakdown(scores, total, assessmentType);
 
       const newEval: StudentLabRecordSubmission = {
         ...(current || {}),
-        id: current?.id || `eval_${Date.now()}_${candidate.regNo}`,
+        id: current?.id || `eval_${assessmentType}_${Date.now()}_${candidate.regNo}`,
         timestamp: new Date().toISOString(),
+        assessmentType,
         regNo: candidate.regNo,
         studentName: candidate.name,
         studentEmail: candidate.email,
@@ -363,36 +515,28 @@ export default function App() {
         submissionDate: current?.submissionDate || new Date().toISOString().split('T')[0],
         status: 'EVALUATED_APPROVED',
         completedExercisesCount: passedCount,
-        totalExercisesCount: exercises.length,
+        totalExercisesCount: modeExercises.length,
         antiCheatingViolationsCount: stuViolations.length,
         violationsCount: stuViolations.length,
         isVerifiedAndApproved: true,
-        rubric: {
-          conceptImplemented: concept,
-          namingConventions: naming,
-          documentation: doc,
-          output: output,
-          total: total,
-          totalMarks: total,
-        },
-        rubrics: {
-          conceptImplemented: concept,
-          namingConventions: naming,
-          documentation: doc,
-          output: output,
-          total: total,
-          totalMarks: total,
-        },
+        rubric: rubricData,
+        rubrics: rubricData,
+        dynamicScores: scores,
+        maxTotalMarks: maxTotal,
         facultyRemarks:
           current?.facultyRemarks && !current.facultyRemarks.includes('Awaiting faculty')
             ? current.facultyRemarks
-            : 'Auto-evaluated on criteria: Concept (5), Naming (1), Doc (1), Output (3). Approved for final PDF download & print.',
+            : `Auto-evaluated on ${assessmentType} criteria (${criteria
+                .map((c) => `${c.label}: ${c.maxMarks}`)
+                .join(', ')}).`,
         evaluatedBy: currentUser.name || 'Faculty Evaluator',
         evaluatedAt: new Date().toISOString(),
       };
 
       const idx = updatedEvals.findIndex(
-        (e) => e.regNo.trim().toUpperCase() === candidate.regNo
+        (e) =>
+          e.regNo.trim().toUpperCase() === candidate.regNo &&
+          (e.assessmentType === 'ESE' ? 'ESE' : 'LAB') === assessmentType
       );
       if (idx !== -1) {
         updatedEvals[idx] = newEval;
@@ -407,7 +551,7 @@ export default function App() {
     }
 
     if (evaluatedCount === 0) {
-      showToast('No pending student lab records to auto-evaluate.', 'warn');
+      showToast(`No pending ${assessmentType} student records to auto-evaluate.`, 'warn');
       return;
     }
 
@@ -416,16 +560,25 @@ export default function App() {
       localStorage.setItem(EVALUATIONS_STORAGE_KEY, JSON.stringify(updatedEvals));
     } catch (e) {}
 
-    showToast(`Auto-evaluated and approved ${evaluatedCount} pending student record(s)!`);
+    showToast(`Auto-evaluated and approved ${evaluatedCount} pending ${assessmentType} record(s)!`);
   };
 
   // Student: Submit Lab Record to Faculty
   const handleSubmitLabRecord = async (recordSubmission: StudentLabRecordSubmission) => {
+    const recType: AssessmentType = recordSubmission.assessmentType === 'ESE' ? 'ESE' : 'LAB';
+    const normalized: StudentLabRecordSubmission = {
+      ...recordSubmission,
+      assessmentType: recType,
+    };
+
     setEvaluations((prev) => {
-      const idx = prev.findIndex((e) => e.regNo === recordSubmission.regNo);
-      const updated = idx !== -1
-        ? prev.map((item, i) => (i === idx ? recordSubmission : item))
-        : [recordSubmission, ...prev];
+      const idx = prev.findIndex(
+        (e) =>
+          e.regNo.trim().toUpperCase() === normalized.regNo.trim().toUpperCase() &&
+          (e.assessmentType === 'ESE' ? 'ESE' : 'LAB') === recType
+      );
+      const updated =
+        idx !== -1 ? prev.map((item, i) => (i === idx ? normalized : item)) : [normalized, ...prev];
       try {
         localStorage.setItem(EVALUATIONS_STORAGE_KEY, JSON.stringify(updated));
       } catch (e) {}
@@ -435,7 +588,7 @@ export default function App() {
     showToast('Lab Record submitted to Faculty!');
 
     if (settings.googleSheetsUrl) {
-      const res = await SheetService.submitLabRecord(settings.googleSheetsUrl, recordSubmission);
+      const res = await SheetService.submitLabRecord(settings.googleSheetsUrl, normalized);
       if (res.success) {
         showToast('Record submission synced to Google Sheet Evaluations tab!');
       }
@@ -552,11 +705,24 @@ export default function App() {
 
     setCurrentUser(enrichedUser);
     try {
-      const key = enrichedUser.role === 'FACULTY' ? FACULTY_STORAGE_KEY : STUDENT_STORAGE_KEY;
+      const key =
+        enrichedUser.role === 'COORDINATOR'
+          ? COORDINATOR_STORAGE_KEY
+          : enrichedUser.role === 'FACULTY'
+          ? FACULTY_STORAGE_KEY
+          : STUDENT_STORAGE_KEY;
       localStorage.setItem(key, JSON.stringify(enrichedUser));
     } catch (e) {}
 
-    if (enrichedUser.role === 'FACULTY') {
+    if (enrichedUser.role === 'COORDINATOR') {
+      setCurrentTab('coordinator');
+      if (settings.googleSheetsUrl) {
+        SheetService.fetchFaculty(settings.googleSheetsUrl).then((freshFaculty) => {
+          setFaculty(freshFaculty);
+        });
+      }
+      showToast(`Logged in to Course Coordinator Portal`);
+    } else if (enrichedUser.role === 'FACULTY') {
       setCurrentTab('faculty');
       showToast(`Logged in as Faculty Admin: ${enrichedUser.name}`);
     } else {
@@ -567,15 +733,20 @@ export default function App() {
 
   const handleLogout = () => {
     try {
-      const key = currentTab === 'faculty' ? FACULTY_STORAGE_KEY : STUDENT_STORAGE_KEY;
+      const key =
+        currentTab === 'coordinator'
+          ? COORDINATOR_STORAGE_KEY
+          : currentTab === 'faculty'
+          ? FACULTY_STORAGE_KEY
+          : STUDENT_STORAGE_KEY;
       localStorage.removeItem(key);
     } catch (e) {}
     setCurrentUser({
-      role: currentTab === 'faculty' ? 'FACULTY' : 'STUDENT',
+      role: currentTab === 'coordinator' ? 'COORDINATOR' : currentTab === 'faculty' ? 'FACULTY' : 'STUDENT',
       email: '',
       name: '',
       regNo: '',
-      department: 'Department of Computer Applications',
+      department: currentTab === 'coordinator' ? 'Course Administration' : 'Department of Computer Applications',
       verifiedViaSheet: false,
     });
     showToast('Signed out.');
@@ -619,7 +790,23 @@ export default function App() {
 
       {/* Main Workspace Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {!isAuthenticated ? (
+        {currentTab === 'coordinator' ? (
+          !isAuthenticated || currentUser.role !== 'COORDINATOR' ? (
+            <CoordinatorAuthCard
+              googleSheetsUrl={settings.googleSheetsUrl}
+              onLoginSuccess={handleLogin}
+            />
+          ) : (
+            <CoordinatorDashboard
+              currentUser={currentUser}
+              facultyList={faculty}
+              googleSheetsUrl={settings.googleSheetsUrl}
+              onSaveFaculty={handleSaveFaculty}
+              onRefreshFaculty={handleRefreshFaculty}
+              onUpdateCoordinatorUser={handleUpdateCoordinatorUser}
+            />
+          )
+        ) : !isAuthenticated ? (
           <AuthModal
             isOpen={true}
             inline={true}
@@ -642,6 +829,10 @@ export default function App() {
                 students={students}
                 evaluations={evaluations}
                 loginAudit={loginAudit}
+                examConfig={examConfig}
+                rubricConfig={rubricConfig}
+                onSaveExamConfig={handleSaveExamConfig}
+                onSaveRubricConfig={handleSaveRubricConfig}
                 onSaveExercise={handleSaveExercise}
                 onAddStudent={handleAddStudent}
                 onSaveEvaluation={handleSaveEvaluation}
@@ -658,6 +849,7 @@ export default function App() {
                 students={students}
                 violations={violations}
                 evaluations={evaluations}
+                examConfig={examConfig}
                 onSubmitCode={handleSubmitCode}
                 onSubmitLabRecord={handleSubmitLabRecord}
                 settings={settings}
@@ -680,21 +872,44 @@ export default function App() {
       </footer>
 
       {/* Modals */}
-      <AuthModal
-        isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        currentUser={currentUser}
-        onLogin={handleLogin}
-        facultyList={faculty}
-        studentsList={students}
-        googleSheetsUrl={settings.googleSheetsUrl}
-        portalRole={currentTab}
-      />
+      {isAuthOpen && currentTab === 'coordinator' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="relative w-full max-w-lg">
+            <button
+              onClick={() => setIsAuthOpen(false)}
+              className="absolute right-3 top-3 z-10 text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition"
+              title="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <CoordinatorAuthCard
+              googleSheetsUrl={settings.googleSheetsUrl}
+              onLoginSuccess={(u) => {
+                setIsAuthOpen(false);
+                handleLogin(u);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {currentTab !== 'coordinator' && (
+        <AuthModal
+          isOpen={isAuthOpen}
+          onClose={() => setIsAuthOpen(false)}
+          currentUser={currentUser}
+          onLogin={handleLogin}
+          facultyList={faculty}
+          studentsList={students}
+          googleSheetsUrl={settings.googleSheetsUrl}
+          portalRole={currentTab}
+        />
+      )}
 
       <UserManualModal
         isOpen={isManualOpen}
         onClose={() => setIsManualOpen(false)}
-        role={currentTab === 'faculty' ? 'FACULTY' : 'STUDENT'}
+        role={currentTab === 'coordinator' ? 'COORDINATOR' : currentTab === 'faculty' ? 'FACULTY' : 'STUDENT'}
       />
     </div>
   );

@@ -1,5 +1,12 @@
 import {
+  AssessmentType,
+  DEFAULT_RUBRIC_CONFIG,
+  DynamicRubricConfig,
+  ExamModeConfig,
   Exercise,
+  FacultyRecord,
+  RubricAutoRule,
+  RubricCriterion,
   StudentRecord,
   Submission,
   User,
@@ -37,6 +44,9 @@ export class SheetService {
             privateInput: item.privateInput !== undefined ? String(item.privateInput) : '',
             privateOutput: item.privateOutput !== undefined ? String(item.privateOutput) : '',
             starterCode: item.starterCode || item.starter_code || item.starter || '',
+            assessmentType: (String(item.assessmentType || 'LAB').trim().toUpperCase() === 'ESE'
+              ? 'ESE'
+              : 'LAB') as AssessmentType,
           }));
         }
       }
@@ -174,6 +184,7 @@ export class SheetService {
       privateInput: exercise.privateInput !== undefined ? String(exercise.privateInput) : '',
       privateOutput: exercise.privateOutput !== undefined ? String(exercise.privateOutput) : '',
       starterCode: exercise.starterCode || '',
+      assessmentType: exercise.assessmentType || 'LAB',
     };
 
     try {
@@ -232,6 +243,7 @@ export class SheetService {
         studentName: submission.studentName || '',
         exerciseId: submission.exerciseId,
         exerciseTitle: submission.exerciseTitle || '',
+        assessmentType: submission.assessmentType || 'LAB',
         status: submission.status,
         score: submission.score,
         sourceCode: submission.code,
@@ -306,6 +318,7 @@ export class SheetService {
       completedExercisesCount: record.completedExercisesCount,
       totalExercisesCount: record.totalExercisesCount,
       antiCheatingViolationsCount: record.antiCheatingViolationsCount,
+      assessmentType: record.assessmentType || 'LAB',
       timestamp: record.timestamp || new Date().toISOString(),
     };
 
@@ -362,7 +375,10 @@ export class SheetService {
       regNo: evaluation.regNo,
       studentName: evaluation.studentName,
       status: evaluation.status,
+      assessmentType: evaluation.assessmentType || 'LAB',
       rubrics: evaluation.rubrics,
+      dynamicScores: evaluation.dynamicScores || {},
+      maxTotalMarks: evaluation.maxTotalMarks,
       antiCheatingViolationsCount: evaluation.antiCheatingViolationsCount,
       facultyRemarks: evaluation.facultyRemarks,
       evaluatedBy: evaluation.evaluatedBy,
@@ -413,11 +429,41 @@ export class SheetService {
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
-          return data;
+          return data.map((item: any) => ({
+            ...item,
+            assessmentType: (String(item.assessmentType || 'LAB').trim().toUpperCase() === 'ESE'
+              ? 'ESE'
+              : 'LAB') as AssessmentType,
+          }));
         }
       }
     } catch (err) {
       console.warn('Failed to fetch evaluations from Google Sheets:', err);
+    }
+    return [];
+  }
+
+  /**
+   * Fetch student submissions from Google Sheets Submissions tab
+   */
+  static async fetchSubmissions(sheetUrl: string): Promise<Submission[]> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) return [];
+    try {
+      const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getSubmissions&t=${Date.now()}`;
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          return data.map((item: any) => ({
+            ...item,
+            assessmentType: (String(item.assessmentType || 'LAB').trim().toUpperCase() === 'ESE'
+              ? 'ESE'
+              : 'LAB') as AssessmentType,
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch submissions from Google Sheets:', err);
     }
     return [];
   }
@@ -494,5 +540,249 @@ export class SheetService {
       console.warn('GET fallback addStudent failed:', fallbackErr);
     }
     return { success: false, message: 'Failed to save student to Google Sheet.' };
+  }
+
+  /**
+   * Shared helper for Coordinator / Faculty action requests (POST with GET fallback)
+   */
+  private static async callAppsScriptAction(
+    sheetUrl: string,
+    action: string,
+    payload: any
+  ): Promise<any> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) {
+      return { success: false, error: 'Google Apps Script URL (VITE_APPS_SCRIPT_URL) is not configured.' };
+    }
+    try {
+      const response = await fetch(sheetUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, payload }),
+      });
+      if (response.ok) {
+        const text = await response.text();
+        try {
+          return JSON.parse(text);
+        } catch {
+          return {
+            success: false,
+            error: 'Apps Script returned HTML instead of JSON. Deploy Code.gs as a New version with "Who has access: Anyone".',
+          };
+        }
+      }
+    } catch (err) {
+      console.warn(`POST ${action} failed, trying GET fallback:`, err);
+    }
+
+    try {
+      const encoded = encodeURIComponent(JSON.stringify(payload || {}));
+      const getUrl = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=${encodeURIComponent(action)}&payload=${encoded}&t=${Date.now()}`;
+      const response = await fetch(getUrl);
+      if (response.ok) {
+        const text = await response.text();
+        try {
+          return JSON.parse(text);
+        } catch {
+          return {
+            success: false,
+            error: 'Apps Script returned HTML instead of JSON. Deploy Code.gs as a New version.',
+          };
+        }
+      }
+    } catch (fallbackErr: any) {
+      return { success: false, error: `Connection failed: ${fallbackErr.message}` };
+    }
+    return { success: false, error: 'Unable to reach Google Apps Script Web App.' };
+  }
+
+  static async coordinatorLogin(
+    sheetUrl: string,
+    username: string,
+    password: string
+  ): Promise<{ success: boolean; user?: User; error?: string }> {
+    const data = await SheetService.callAppsScriptAction(sheetUrl, 'coordinatorLogin', {
+      username: username.trim(),
+      password,
+    });
+    if (data && data.success) {
+      return {
+        success: true,
+        user: {
+          role: 'COORDINATOR',
+          username: data.username || 'coordinator',
+          email: data.officialEmail || data.email || '',
+          name: data.name || 'Course Coordinator',
+          department: data.department || 'Course Administration',
+          verifiedViaSheet: true,
+          mustChangePassword: Boolean(data.mustChangePassword),
+        },
+      };
+    }
+    return { success: false, error: data?.error || 'Invalid Coordinator credentials.' };
+  }
+
+  static async coordinatorChangePassword(
+    sheetUrl: string,
+    currentPassword: string,
+    newPassword: string,
+    officialEmail?: string
+  ): Promise<{ success: boolean; officialEmail?: string; message?: string; error?: string }> {
+    return SheetService.callAppsScriptAction(sheetUrl, 'coordinatorChangePassword', {
+      currentPassword,
+      newPassword,
+      officialEmail: (officialEmail || '').trim().toLowerCase(),
+    });
+  }
+
+  static async coordinatorSendOtp(
+    sheetUrl: string,
+    email: string
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    return SheetService.callAppsScriptAction(sheetUrl, 'coordinatorSendOtp', {
+      email: email.trim().toLowerCase(),
+    });
+  }
+
+  static async coordinatorVerifyOtp(
+    sheetUrl: string,
+    email: string,
+    otp: string
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    return SheetService.callAppsScriptAction(sheetUrl, 'coordinatorVerifyOtp', {
+      email: email.trim().toLowerCase(),
+      otp: otp.trim(),
+    });
+  }
+
+  static async coordinatorResetPassword(
+    sheetUrl: string,
+    email: string,
+    otp: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    return SheetService.callAppsScriptAction(sheetUrl, 'coordinatorResetPassword', {
+      email: email.trim().toLowerCase(),
+      otp: otp.trim(),
+      newPassword,
+    });
+  }
+
+  static async fetchFaculty(sheetUrl: string): Promise<FacultyRecord[]> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) return [];
+    try {
+      const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getFaculty&t=${Date.now()}`;
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          return data;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch faculty list from Google Sheets:', err);
+    }
+    return [];
+  }
+
+  static async saveFaculty(
+    sheetUrl: string,
+    handler: FacultyRecord,
+    originalEmail?: string
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    return SheetService.callAppsScriptAction(sheetUrl, 'saveFaculty', {
+      email: handler.email.trim().toLowerCase(),
+      name: handler.name.trim(),
+      department: handler.department.trim(),
+      originalEmail: originalEmail ? originalEmail.trim().toLowerCase() : undefined,
+    });
+  }
+
+  /**
+   * Fetch live Exam Mode configuration (LAB vs ESE Practical Mode)
+   */
+  static async fetchExamConfig(sheetUrl: string): Promise<ExamModeConfig> {
+    const fallback: ExamModeConfig = {
+      eseEnabled: false,
+      eseTitle: 'End Semester Practical Examination',
+    };
+    if (!sheetUrl || !sheetUrl.startsWith('http')) return fallback;
+    try {
+      const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getExamConfig&t=${Date.now()}`;
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && typeof data.eseEnabled !== 'undefined') {
+          return {
+            eseEnabled: Boolean(data.eseEnabled),
+            eseTitle: String(data.eseTitle || 'End Semester Practical Examination'),
+            updatedBy: data.updatedBy || '',
+            updatedAt: data.updatedAt || '',
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch ExamConfig from Google Sheets:', err);
+    }
+    return fallback;
+  }
+
+  /**
+   * Faculty: Save Exam Mode toggle (ESE ON/OFF) & Exam Title to ExamConfig tab
+   */
+  static async saveExamConfig(
+    sheetUrl: string,
+    config: ExamModeConfig
+  ): Promise<{ success: boolean; eseEnabled?: boolean; eseTitle?: string; message?: string; error?: string }> {
+    return SheetService.callAppsScriptAction(sheetUrl, 'saveExamConfig', {
+      eseEnabled: Boolean(config.eseEnabled),
+      eseTitle: (config.eseTitle || 'End Semester Practical Examination').trim(),
+      updatedBy: config.updatedBy || 'Faculty Admin',
+    });
+  }
+
+  /**
+   * Fetch dynamic LAB and ESE Rubric criteria from RubricTemplates tab
+   */
+  static async fetchRubricTemplates(sheetUrl: string): Promise<DynamicRubricConfig> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) return DEFAULT_RUBRIC_CONFIG;
+    try {
+      const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getRubricTemplates&t=${Date.now()}`;
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && (Array.isArray(data.LAB) || Array.isArray(data.ESE))) {
+          const sanitizeList = (list: any[], fallbackList: RubricCriterion[]): RubricCriterion[] => {
+            if (!Array.isArray(list) || list.length === 0) return fallbackList;
+            return list
+              .filter((c) => c && String(c.label || '').trim().length > 0)
+              .map((c, idx) => ({
+                id: String(c.id || `crit_${idx + 1}`).trim(),
+                label: String(c.label).trim(),
+                description: String(c.description || '').trim(),
+                maxMarks: Math.max(0.5, Number(c.maxMarks) || 1),
+                autoRule: (c.autoRule || 'MANUAL') as RubricAutoRule,
+              }));
+          };
+
+          return {
+            LAB: sanitizeList(data.LAB, DEFAULT_RUBRIC_CONFIG.LAB),
+            ESE: sanitizeList(data.ESE, DEFAULT_RUBRIC_CONFIG.ESE),
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch RubricTemplates from Google Sheets:', err);
+    }
+    return DEFAULT_RUBRIC_CONFIG;
+  }
+
+  /**
+   * Faculty: Save customized LAB & ESE Rubric criteria to RubricTemplates tab
+   */
+  static async saveRubricTemplates(
+    sheetUrl: string,
+    config: DynamicRubricConfig
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    return SheetService.callAppsScriptAction(sheetUrl, 'saveRubricTemplates', config);
   }
 }

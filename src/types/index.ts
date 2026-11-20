@@ -1,8 +1,94 @@
-export type UserRole = 'FACULTY' | 'STUDENT' | 'GUEST';
+export type UserRole = 'FACULTY' | 'STUDENT' | 'COORDINATOR' | 'GUEST';
+export type AssessmentType = 'LAB' | 'ESE';
+export type RubricAutoRule = 'CODE_IMPLEMENTATION' | 'OUTPUT_TESTS' | 'DOCUMENTATION' | 'MANUAL';
+
+export interface RubricCriterion {
+  id: string;
+  label: string;
+  description?: string;
+  maxMarks: number;
+  autoRule?: RubricAutoRule;
+}
+
+export interface DynamicRubricConfig {
+  LAB: RubricCriterion[];
+  ESE: RubricCriterion[];
+}
+
+export const DEFAULT_RUBRIC_CONFIG: DynamicRubricConfig = {
+  LAB: [
+    {
+      id: 'conceptImplemented',
+      label: 'Concept Implemented',
+      description: 'Correct Java OOP logic, Scanner, and control structures',
+      maxMarks: 5,
+      autoRule: 'CODE_IMPLEMENTATION',
+    },
+    {
+      id: 'namingConventions',
+      label: 'Naming Conventions',
+      description: 'Standard camelCase variables and PascalCase classes',
+      maxMarks: 1,
+      autoRule: 'DOCUMENTATION',
+    },
+    {
+      id: 'documentation',
+      label: 'Documentation',
+      description: 'Comments, Aim, and written algorithm / procedure',
+      maxMarks: 1,
+      autoRule: 'DOCUMENTATION',
+    },
+    {
+      id: 'output',
+      label: 'Output Accuracy',
+      description: 'Public and hidden test case execution passes',
+      maxMarks: 3,
+      autoRule: 'OUTPUT_TESTS',
+    },
+  ],
+  ESE: [
+    {
+      id: 'algorithm',
+      label: 'Algorithm & Problem Analysis',
+      description: 'Logical approach, edge case handling, and class structure',
+      maxMarks: 10,
+      autoRule: 'DOCUMENTATION',
+    },
+    {
+      id: 'implementation',
+      label: 'Program Implementation',
+      description: 'Java 17 syntax, OOP design, and modular code quality',
+      maxMarks: 20,
+      autoRule: 'CODE_IMPLEMENTATION',
+    },
+    {
+      id: 'execution',
+      label: 'Execution & Test Output',
+      description: 'Public and hidden private test case verification',
+      maxMarks: 15,
+      autoRule: 'OUTPUT_TESTS',
+    },
+    {
+      id: 'viva',
+      label: 'Viva-Voce & Explanation',
+      description: 'Oral examination and code defense during practical exam',
+      maxMarks: 5,
+      autoRule: 'MANUAL',
+    },
+  ],
+};
+
+export interface ExamModeConfig {
+  eseEnabled: boolean;
+  eseTitle: string;
+  updatedBy?: string;
+  updatedAt?: string;
+}
 
 export interface User {
   role: UserRole;
   email: string;
+  username?: string;
   personalEmail?: string;
   deviceId?: string;
   multiStudentAlert?: string;
@@ -10,6 +96,7 @@ export interface User {
   regNo?: string;
   department?: string;
   verifiedViaSheet?: boolean;
+  mustChangePassword?: boolean;
 }
 
 export interface Exercise {
@@ -18,6 +105,7 @@ export interface Exercise {
   description: string;
   category: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
+  assessmentType?: AssessmentType;
   openTime: string; // ISO string or datetime-local
   closeTime: string; // ISO string or datetime-local
   publicInput: string;
@@ -47,6 +135,7 @@ export interface Submission {
   studentName?: string;
   exerciseId: string;
   exerciseTitle?: string;
+  assessmentType?: AssessmentType;
   code: string;
   status: SubmissionStatus;
   publicLog: string;
@@ -161,6 +250,7 @@ export type LabRecordStatus =
 export interface StudentLabRecordSubmission {
   id: string;
   timestamp: string;
+  assessmentType?: AssessmentType;
   studentEmail: string;       // Official email account
   personalEmail?: string;     // Student's personal Mail ID (Gmail)
   deviceId?: string;          // Browser / Device identifier
@@ -174,6 +264,8 @@ export interface StudentLabRecordSubmission {
   status: LabRecordStatus;
   rubrics?: RubricBreakdown;
   rubric?: RubricBreakdown;
+  dynamicScores?: Record<string, number>;
+  maxTotalMarks?: number;
   facultyRemarks?: string;
   evaluatedBy?: string;
   evaluatedAt?: string;

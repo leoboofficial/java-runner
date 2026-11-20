@@ -137,7 +137,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         };
 
         setSuccessMsg(
-          `Verified via Google Sheet! Signed in as ${verifiedUser.name} (${verifiedUser.role}).`
+          `Signed in as ${verifiedUser.name} (${verifiedUser.role}).`
         );
         setTimeout(() => {
           onLogin(verifiedUser);
@@ -168,7 +168,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-slate-900">
-                {isFacultyPortal ? 'Faculty Sheet Authentication' : 'Student Sheet Authentication'}
+                {isFacultyPortal ? 'Faculty Authentication' : 'Student Authentication'}
               </h3>
               <span
                 className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border ${
@@ -180,11 +180,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {isFacultyPortal ? 'Faculty Portal' : 'Student Portal'}
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              {isFacultyPortal
-                ? 'Validated live against the Faculty tab in your connected Google Sheet.'
-                : 'Validated live against the Students tab in your connected Google Sheet.'}
-            </p>
           </div>
         </div>
         {!inline && (
@@ -258,7 +253,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {isVerifying ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Verifying with Google Sheet...</span>
+                <span>Verifying...</span>
               </>
             ) : (
               <>

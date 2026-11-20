@@ -1,0 +1,9 @@
+AssessmentType,CriterionId,Label,Description,MaxMarks,AutoRule,DisplayOrder
+LAB,conceptImplemented,Concept Implemented,"Correct Java OOP logic, Scanner, and control structures",5,CODE_IMPLEMENTATION,1
+LAB,namingConventions,Naming Conventions,"Standard camelCase variables and PascalCase classes",1,DOCUMENTATION,2
+LAB,documentation,Documentation,"Comments, Aim, and written algorithm / procedure",1,DOCUMENTATION,3
+LAB,output,Output Accuracy,"Public and hidden test case execution passes",3,OUTPUT_TESTS,4
+ESE,algorithm,Algorithm & Problem Analysis,"Logical approach, edge case handling, and class structure",10,DOCUMENTATION,1
+ESE,implementation,Program Implementation,"Java 17 syntax, OOP design, and modular code quality",20,CODE_IMPLEMENTATION,2
+ESE,execution,Execution & Test Output,"Public and hidden private test case verification",15,OUTPUT_TESTS,3
+ESE,viva,Viva-Voce & Explanation,"Oral examination and code defense during practical exam",5,MANUAL,4

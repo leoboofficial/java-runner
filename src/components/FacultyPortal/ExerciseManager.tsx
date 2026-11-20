@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { Exercise } from '../../types';
+import { AssessmentType, Exercise } from '../../types';
 import {
   Plus,
   Calendar,
   Clock,
   Play,
-  CheckCircle,
   FileCode,
   Eye,
   EyeOff,
   Code2,
   X,
+  GraduationCap,
+  FlaskConical,
 } from 'lucide-react';
 import { JavaRunnerService } from '../../services/javaRunner';
 
@@ -26,11 +27,13 @@ export const ExerciseManager: React.FC<ExerciseManagerProps> = ({
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingEx, setEditingEx] = useState<Exercise | null>(null);
+  const [typeFilter, setTypeFilter] = useState<'ALL' | AssessmentType>('ALL');
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Arrays & Algorithms');
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Easy');
+  const [assessmentType, setAssessmentType] = useState<AssessmentType>('LAB');
   const [openTime, setOpenTime] = useState('');
   const [closeTime, setCloseTime] = useState('');
   const [publicInput, setPublicInput] = useState('');
@@ -96,8 +99,10 @@ public class Main {
 }`);
   };
 
-  const openNewModal = () => {
+  const openNewModal = (defaultType?: AssessmentType) => {
     setEditingEx(null);
+    const targetType: AssessmentType = defaultType || (typeFilter === 'ESE' ? 'ESE' : 'LAB');
+    setAssessmentType(targetType);
     const now = new Date();
     const close = new Date(Date.now() + 3600000 * 24 * 30);
     setOpenTime(now.toISOString().slice(0, 16));
@@ -113,6 +118,7 @@ public class Main {
     setDescription(ex.description);
     setCategory(ex.category || 'Algorithms');
     setDifficulty(ex.difficulty || 'Easy');
+    setAssessmentType(ex.assessmentType === 'ESE' ? 'ESE' : 'LAB');
     setOpenTime(ex.openTime);
     setCloseTime(ex.closeTime);
     setPublicInput(ex.publicInput);
@@ -139,12 +145,14 @@ public class Main {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !openTime || !closeTime) return;
+    const prefix = assessmentType === 'ESE' ? 'ESE_' : 'EX_';
     const exerciseToSave: Exercise = {
-      id: editingEx ? editingEx.id : `EX_${Date.now().toString().slice(-5)}`,
+      id: editingEx ? editingEx.id : `${prefix}${Date.now().toString().slice(-5)}`,
       title,
       description,
       category,
       difficulty,
+      assessmentType,
       openTime,
       closeTime,
       publicInput,
@@ -183,57 +191,134 @@ public class Main {
     );
   };
 
+  const labCount = exercises.filter((e) => (e.assessmentType || 'LAB') !== 'ESE').length;
+  const eseCount = exercises.filter((e) => e.assessmentType === 'ESE').length;
+  const displayedExercises = exercises.filter((e) => {
+    if (typeFilter === 'ALL') return true;
+    const t: AssessmentType = e.assessmentType === 'ESE' ? 'ESE' : 'LAB';
+    return t === typeFilter;
+  });
+
   return (
     <div className="space-y-6">
       {/* Top action row */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Lab Exercises & Schedule</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+            Question Bank: Lab Exercises &amp; ESE Practicals
+          </h2>
           <p className="text-xs text-slate-500">
-            Define problems, test cases, and time-gated access windows for student evaluations.
+            Tag questions as <strong>Lab Exercise (LAB)</strong> or <strong>ESE Practical (ESE)</strong>. When ESE Mode is turned ON, students only see ESE questions.
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => openNewModal('LAB')}
+            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition"
+          >
+            <Plus className="w-4 h-4" />
+            Add Lab Exercise
+          </button>
+          <button
+            onClick={() => openNewModal('ESE')}
+            className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition"
+          >
+            <GraduationCap className="w-4 h-4" />
+            Add ESE Question
+          </button>
+        </div>
+      </div>
+
+      {/* Assessment Type Filter Strip */}
+      <div className="flex flex-wrap items-center gap-2 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
         <button
-          onClick={openNewModal}
-          className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition"
+          onClick={() => setTypeFilter('ALL')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+            typeFilter === 'ALL'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
         >
-          <Plus className="w-4 h-4" />
-          Schedule New Exercise
+          All Questions ({exercises.length})
+        </button>
+        <button
+          onClick={() => setTypeFilter('LAB')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+            typeFilter === 'LAB'
+              ? 'bg-indigo-600 text-white shadow-2xs'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <FlaskConical className="w-3.5 h-3.5" />
+          Lab Exercises ({labCount})
+        </button>
+        <button
+          onClick={() => setTypeFilter('ESE')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+            typeFilter === 'ESE'
+              ? 'bg-rose-600 text-white shadow-2xs'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <GraduationCap className="w-3.5 h-3.5" />
+          ESE Practical Questions ({eseCount})
         </button>
       </div>
 
       {/* Exercises List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {exercises.length === 0 ? (
+        {displayedExercises.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center col-span-full shadow-xs">
             <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center mx-auto mb-3">
               <FileCode className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 mb-1">No Exercises Scheduled Yet</h3>
+            <h3 className="text-base font-bold text-slate-900 mb-1">
+              {typeFilter === 'ESE'
+                ? 'No ESE Practical Questions Added Yet'
+                : typeFilter === 'LAB'
+                ? 'No Lab Exercises Scheduled Yet'
+                : 'No Questions Scheduled Yet'}
+            </h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
-              Click below to schedule your first Java exercise and test cases.
+              Click below to schedule a Java question and test cases for {typeFilter === 'ESE' ? 'the End Semester Practical Exam' : 'regular lab evaluation'}.
             </p>
             <button
-              onClick={openNewModal}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition shadow-xs"
+              onClick={() => openNewModal(typeFilter === 'ESE' ? 'ESE' : 'LAB')}
+              className={`px-4 py-2 rounded-xl text-white text-xs font-semibold inline-flex items-center gap-1.5 transition shadow-xs ${
+                typeFilter === 'ESE' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
             >
-              <Plus className="w-4 h-4" /> Schedule First Exercise
+              <Plus className="w-4 h-4" />
+              {typeFilter === 'ESE' ? 'Schedule ESE Question' : 'Schedule First Exercise'}
             </button>
           </div>
         ) : (
-          exercises.map((ex) => (
+          displayedExercises.map((ex) => {
+            const isEse = ex.assessmentType === 'ESE';
+            return (
             <div
               key={ex.id}
-              className="bg-white border border-slate-200 rounded-2xl p-5 hover:border-slate-300 hover:shadow-md transition flex flex-col justify-between shadow-xs"
+              className={`bg-white border rounded-2xl p-5 hover:shadow-md transition flex flex-col justify-between shadow-xs ${
+                isEse ? 'border-rose-200 hover:border-rose-300' : 'border-slate-200 hover:border-slate-300'
+              }`}
             >
               <div>
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                      <span
+                        className={`text-[10px] font-black px-2 py-0.5 rounded uppercase border ${
+                          isEse
+                            ? 'bg-rose-100 text-rose-800 border-rose-300'
+                            : 'bg-indigo-100 text-indigo-800 border-indigo-300'
+                        }`}
+                      >
+                        {isEse ? 'ESE PRACTICAL' : 'LAB'}
+                      </span>
                       <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
                         {ex.id}
                       </span>
-                      <span className="text-xs font-medium px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-50 text-slate-700 border border-slate-200">
                         {ex.category}
                       </span>
                       <span
@@ -299,11 +384,12 @@ public class Main {
                   onClick={() => handleEdit(ex)}
                   className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition"
                 >
-                  Edit & Test Cases
+                  Edit &amp; Test Cases
                 </button>
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -315,7 +401,11 @@ public class Main {
               <div className="flex items-center gap-2">
                 <Code2 className="w-5 h-5 text-indigo-600" />
                 <h3 className="text-base font-bold text-slate-900">
-                  {editingEx ? `Edit Exercise: ${editingEx.id}` : 'Schedule New Lab Exercise'}
+                  {editingEx
+                    ? `Edit Question: ${editingEx.id}`
+                    : assessmentType === 'ESE'
+                    ? 'Schedule New ESE Practical Question'
+                    : 'Schedule New Lab Exercise'}
                 </h3>
               </div>
               <button
@@ -326,6 +416,44 @@ public class Main {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              {/* Assessment Type Switcher */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">
+                    Assessment Type (Visibility Control)
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Students see <strong>LAB</strong> during normal sessions and <strong>ESE</strong> only when ESE Mode is enabled.
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setAssessmentType('LAB')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                      assessmentType === 'LAB'
+                        ? 'bg-indigo-600 text-white shadow-2xs'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <FlaskConical className="w-3.5 h-3.5" />
+                    Lab Exercise
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAssessmentType('ESE')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                      assessmentType === 'ESE'
+                        ? 'bg-rose-600 text-white shadow-2xs'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <GraduationCap className="w-3.5 h-3.5" />
+                    ESE Practical
+                  </button>
+                </div>
+              </div>
+
               <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-semibold text-indigo-900">
                   Quick Load Problem Templates:
