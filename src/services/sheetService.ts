@@ -102,7 +102,22 @@ export class SheetService {
           error: 'Google Apps Script returned an HTML page instead of JSON. Re-deploy Code.gs with "Execute as: Me" and "Who has access: Anyone".',
         };
       }
+      const cleanInputEmail = email.trim().toLowerCase();
+      const cleanInputReg = (regNo || '').trim().toUpperCase();
+
       if (data.role && data.role !== 'UNAUTHORIZED') {
+        if (portalRole === 'FACULTY' && data.role !== 'FACULTY') {
+          return {
+            success: false,
+            error: `Access Denied: Official Email (${cleanInputEmail}) is not authorized in the Faculty sheet. Please contact the administrator.`,
+          };
+        }
+        if (portalRole === 'STUDENT' && data.role !== 'STUDENT') {
+          return {
+            success: false,
+            error: `Access Denied: Official Email (${cleanInputEmail}) or Reg No (${cleanInputReg}) mismatch. Please check credentials with your course teacher.`,
+          };
+        }
         return {
           success: true,
           user: {
@@ -118,7 +133,21 @@ export class SheetService {
           },
         };
       }
-      return { success: false, error: data.error || 'Access denied by Google Sheet.' };
+
+      const rawError = String(data.error || '');
+      if (portalRole === 'FACULTY') {
+        const facultyError =
+          rawError && !rawError.includes('Students sheet') && !rawError.includes('Reg No')
+            ? rawError
+            : `Access Denied: Official Email (${cleanInputEmail}) is not authorized in the Faculty sheet. Please contact the administrator.`;
+        return { success: false, error: facultyError };
+      }
+
+      const studentError =
+        rawError && !rawError.includes('in the Students sheet')
+          ? rawError
+          : `Access Denied: Official Email (${cleanInputEmail}) or Reg No (${cleanInputReg}) mismatch. Please check credentials with your course teacher.`;
+      return { success: false, error: studentError };
     } catch (err: any) {
       return { success: false, error: `Connection to Google Sheet failed: ${err.message}` };
     }

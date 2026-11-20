@@ -268,7 +268,7 @@ function loginUserManual(email, regNo, personalEmail, deviceId, portalRole) {
     if (facultyData.length <= 1) {
       return {
         role: 'UNAUTHORIZED',
-        error: 'Access Denied: Faculty Google Sheet is empty. Add your faculty email in the Faculty tab first.'
+        error: 'Access Denied: Official Email (' + cleanEmail + ') is not authorized. The Faculty sheet is currently empty.'
       };
     }
     for (let i = 1; i < facultyData.length; i++) {
@@ -285,7 +285,7 @@ function loginUserManual(email, regNo, personalEmail, deviceId, portalRole) {
     if (requestedRole === 'FACULTY') {
       return {
         role: 'UNAUTHORIZED',
-        error: 'Access Denied: "' + cleanEmail + '" is not authorized in the Faculty Google Sheet tab.'
+        error: 'Access Denied: Official Email (' + cleanEmail + ') is not authorized in the Faculty sheet. Please contact the administrator.'
       };
     }
   }
@@ -294,7 +294,7 @@ function loginUserManual(email, regNo, personalEmail, deviceId, portalRole) {
   if (!cleanReg) {
     return {
       role: 'UNAUTHORIZED',
-      error: 'Access Denied: Registration Number is required for student login.'
+      error: 'Access Denied: Reg No is required. Please check credentials with your course teacher.'
     };
   }
 
@@ -303,13 +303,19 @@ function loginUserManual(email, regNo, personalEmail, deviceId, portalRole) {
   if (studentData.length <= 1) {
     return {
       role: 'UNAUTHORIZED',
-      error: 'Access Denied: Students Google Sheet is empty. Add enrolled students in the Students tab first.'
+      error: 'Access Denied: Official Email (' + cleanEmail + ') or Reg No (' + cleanReg + ') not found. Please check credentials with your course teacher.'
     };
   }
+
+  let emailFoundInStudents = false;
+  let regFoundInStudents = false;
 
   for (let i = 1; i < studentData.length; i++) {
     const sEmail = (studentData[i][0] || '').toString().trim().toLowerCase();
     const sReg = (studentData[i][1] || '').toString().trim().toUpperCase();
+    if (sEmail && sEmail === cleanEmail) emailFoundInStudents = true;
+    if (sReg && sReg === cleanReg) regFoundInStudents = true;
+
     if (sEmail && sReg && sEmail === cleanEmail && sReg === cleanReg) {
       const stuName = studentData[i][2] || cleanEmail;
       const stuDept = studentData[i][3] || 'Department of Computer Applications';
@@ -354,9 +360,22 @@ function loginUserManual(email, regNo, personalEmail, deviceId, portalRole) {
     }
   }
 
+  if (emailFoundInStudents) {
+    return {
+      role: 'UNAUTHORIZED',
+      error: 'Access Denied: Reg No (' + cleanReg + ') mismatch for Official Email (' + cleanEmail + '). Please check credentials with your course teacher.'
+    };
+  }
+  if (regFoundInStudents) {
+    return {
+      role: 'UNAUTHORIZED',
+      error: 'Access Denied: Official Email (' + cleanEmail + ') mismatch for Reg No (' + cleanReg + '). Please check credentials with your course teacher.'
+    };
+  }
+
   return {
     role: 'UNAUTHORIZED',
-    error: 'Access Denied: Official Email (' + cleanEmail + ') and Reg No (' + cleanReg + ') do not match any record in the Students Google Sheet tab.'
+    error: 'Access Denied: Official Email (' + cleanEmail + ') or Reg No (' + cleanReg + ') mismatch. Please check credentials with your course teacher.'
   };
 }
 
