@@ -1,0 +1,6 @@
+{
+  "name": "JavaLabPro - BCB52003 Object Oriented Programming Lab",
+  "description": "JavaLabPro platform for BCB52003 Object Oriented Programming Lab, JDK 17 with Automated Grading, Proctoring, and Practical Lab Record Generator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

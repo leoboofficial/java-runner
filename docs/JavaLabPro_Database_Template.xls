@@ -1,0 +1,229 @@
+<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Top" ss:WrapText="1"/>
+   <Font ss:FontName="Calibri" ss:Size="11"/>
+   <NumberFormat ss:Format="@"/>
+  </Style>
+  <Style ss:ID="Header">
+   <Alignment ss:Vertical="Center" ss:WrapText="1"/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#1E3A8A" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="@"/>
+  </Style>
+  <Style ss:ID="TextCell">
+   <Alignment ss:Vertical="Top" ss:WrapText="1"/>
+   <NumberFormat ss:Format="@"/>
+  </Style>
+ </Styles>
+
+ <Worksheet ss:Name="Faculty">
+  <Table>
+   <Column ss:Width="200"/>
+   <Column ss:Width="180"/>
+   <Column ss:Width="230"/>
+   <Row>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Email</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Name</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Department</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">faculty@hindustanuniv.ac.in</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Dr. Faculty Admin</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Department of Computer Applications</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="Students">
+  <Table>
+   <Column ss:Width="220"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="180"/>
+   <Column ss:Width="230"/>
+   <Row>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Email</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">RegNo</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Name</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Department</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">student@student.hindustanuniv.ac.in</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">2411001</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Sample Student</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Department of Computer Applications</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="Exercises">
+  <Table>
+   <Column ss:Width="100"/>
+   <Column ss:Width="160"/>
+   <Column ss:Width="240"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="260"/>
+   <Column ss:Width="160"/>
+   <Column ss:Width="90"/>
+   <Row>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Exercise ID</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Title</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Description</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Open Time</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Close Time</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Public Input</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Public Output</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Private Input</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Private Output</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Starter Code</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Category</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Difficulty</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">EX_1</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Sum and Difference</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Read two integers a and b. Compute and display sum and difference.</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">2026-01-01T00:00</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">2027-12-31T23:59</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">5&#10;3</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Sum: 8&#10;Diff: 2</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">10&#10;4</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Sum: 14&#10;Diff: 6</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">import java.util.Scanner;&#10;&#10;public class Main {&#10;    public static void main(String[] args) {&#10;        Scanner sc = new Scanner(System.in);&#10;        &#10;    }&#10;}</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Basic Java &amp; Operators</Data></Cell>
+    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Easy</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="LoginAudit">
+  <Table>
+   <Column ss:Width="150"/>
+   <Column ss:Width="210"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="210"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="160"/>
+   <Column ss:Width="200"/>
+   <Row>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Timestamp</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Official Email</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Reg No</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Student Name</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Recorded Mail ID</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Device ID</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Other RegNos Used</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Multi-Student Status</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="Submissions">
+  <Table>
+   <Column ss:Width="150"/>
+   <Column ss:Width="210"/>
+   <Column ss:Width="210"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="160"/>
+   <Column ss:Width="160"/>
+   <Column ss:Width="70"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="220"/>
+   <Column ss:Width="280"/>
+   <Row>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Timestamp</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Official Email</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Recorded Mail ID</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Reg No</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Student Name</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Exercise ID</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Exercise Title</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Status</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Score</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Device ID</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Multi-Student Flag</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Source Code</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="Violations">
+  <Table>
+   <Column ss:Width="150"/>
+   <Column ss:Width="210"/>
+   <Column ss:Width="210"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="240"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="140"/>
+   <Row>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Timestamp</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Official Email</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Recorded Mail ID</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Reg No</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Student Name</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Exercise ID</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Violation Type</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Details</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Severity</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Device ID</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <Worksheet ss:Name="Evaluations">
+  <Table>
+   <Column ss:Width="150"/>
+   <Column ss:Width="210"/>
+   <Column ss:Width="210"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="220"/>
+   <Column ss:Width="220"/>
+   <Column ss:Width="150"/>
+   <Row>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Timestamp</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Official Email</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Recorded Mail ID</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Reg No</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Student Name</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Status</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Concept (5)</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Naming (1)</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Documentation (1)</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Output (3)</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Total Marks (10)</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Violations Count</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Device ID</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Multi-Student Flag</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Faculty Remarks</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Evaluated By</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+</Workbook>
