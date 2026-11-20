@@ -54,13 +54,14 @@ export class SheetService {
     regNo: string,
     sheetUrl: string,
     personalEmail?: string,
-    deviceId?: string
+    deviceId?: string,
+    portalRole?: 'FACULTY' | 'STUDENT'
   ): Promise<{ success: boolean; user?: User; error?: string }> {
-    return SheetService.verifyLogin(sheetUrl, email, regNo, personalEmail, deviceId);
+    return SheetService.verifyLogin(sheetUrl, email, regNo, personalEmail, deviceId, portalRole);
   }
 
   /**
-   * Verify login against Faculty and Students tabs in Google Sheets,
+   * Verify login strictly against Faculty and Students tabs in Google Sheets,
    * recording Student Personal Mail ID & Device ID in LoginAudit.
    */
   static async verifyLogin(
@@ -68,10 +69,11 @@ export class SheetService {
     email: string,
     regNo?: string,
     personalEmail?: string,
-    deviceId?: string
+    deviceId?: string,
+    portalRole?: 'FACULTY' | 'STUDENT'
   ): Promise<{ success: boolean; user?: User; error?: string }> {
     if (!sheetUrl || !sheetUrl.startsWith('http')) {
-      return { success: false, error: 'Google Sheet URL not configured' };
+      return { success: false, error: 'Google Apps Script URL (VITE_APPS_SCRIPT_URL) is not configured.' };
     }
     try {
       const params = new URLSearchParams({
@@ -80,32 +82,46 @@ export class SheetService {
         regNo: (regNo || '').trim().toUpperCase(),
         personalEmail: (personalEmail || '').trim().toLowerCase(),
         deviceId: (deviceId || '').trim(),
+        portalRole: portalRole || '',
       });
-      const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}${params.toString()}`;
+      const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}${params.toString()}&t=${Date.now()}`;
       const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.role && data.role !== 'UNAUTHORIZED') {
-          return {
-            success: true,
-            user: {
-              role: data.role,
-              email: data.email,
-              personalEmail: data.personalEmail || personalEmail?.trim().toLowerCase(),
-              deviceId: data.deviceId || deviceId,
-              multiStudentAlert: data.multiStudentAlert || '',
-              name: data.name,
-              regNo: data.regNo,
-              department: data.department,
-            },
-          };
-        }
-        return { success: false, error: data.error || 'Authentication denied by Google Sheet.' };
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `Google Apps Script returned HTTP ${response.status}. Verify Web App deployment permissions ("Who has access: Anyone").`,
+        };
       }
+      const rawText = await response.text();
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        return {
+          success: false,
+          error: 'Google Apps Script returned an HTML page instead of JSON. Re-deploy Code.gs with "Execute as: Me" and "Who has access: Anyone".',
+        };
+      }
+      if (data.role && data.role !== 'UNAUTHORIZED') {
+        return {
+          success: true,
+          user: {
+            role: data.role,
+            email: data.email,
+            personalEmail: data.personalEmail || personalEmail?.trim().toLowerCase(),
+            deviceId: data.deviceId || deviceId,
+            multiStudentAlert: data.multiStudentAlert || '',
+            name: data.name,
+            regNo: data.regNo,
+            department: data.department,
+            verifiedViaSheet: true,
+          },
+        };
+      }
+      return { success: false, error: data.error || 'Access denied by Google Sheet.' };
     } catch (err: any) {
       return { success: false, error: `Connection to Google Sheet failed: ${err.message}` };
     }
-    return { success: false, error: 'Unable to reach Google Sheet.' };
   }
 
   /**
@@ -395,5 +411,59 @@ export class SheetService {
       console.warn('Failed to fetch LoginAudit from Google Sheets:', err);
     }
     return [];
+  }
+
+  /**
+   * Fetch enrolled students directly from Students tab in Google Sheets
+   */
+  static async fetchStudents(sheetUrl: string): Promise<StudentRecord[]> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) return [];
+    try {
+      const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getStudents&t=${Date.now()}`;
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          return data;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch students from Google Sheets:', err);
+    }
+    return [];
+  }
+
+  /**
+   * Save/enroll a student in the Students tab in Google Sheets
+   */
+  static async saveStudent(sheetUrl: string, student: StudentRecord): Promise<{ success: boolean; message?: string }> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) {
+      return { success: false, message: 'Google Sheet URL not configured' };
+    }
+    try {
+      const response = await fetch(sheetUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'addStudent', payload: student }),
+      });
+      if (response.ok) {
+        const data = await response.json().catch(() => null);
+        if (data && data.success) return { success: true, message: data.message };
+      }
+    } catch (err) {
+      console.warn('POST addStudent failed, trying GET fallback:', err);
+    }
+    try {
+      const encoded = encodeURIComponent(JSON.stringify(student));
+      const getUrl = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=addStudent&payload=${encoded}&t=${Date.now()}`;
+      const response = await fetch(getUrl);
+      if (response.ok) {
+        const data = await response.json().catch(() => null);
+        if (data && data.success) return { success: true, message: data.message };
+      }
+    } catch (fallbackErr) {
+      console.warn('GET fallback addStudent failed:', fallbackErr);
+    }
+    return { success: false, message: 'Failed to save student to Google Sheet.' };
   }
 }

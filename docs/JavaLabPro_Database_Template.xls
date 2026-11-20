@@ -33,11 +33,6 @@
     <Cell ss:StyleID="Header"><Data ss:Type="String">Name</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Department</Data></Cell>
    </Row>
-   <Row>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">faculty@hindustanuniv.ac.in</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Dr. Faculty Admin</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Department of Computer Applications</Data></Cell>
-   </Row>
   </Table>
  </Worksheet>
 
@@ -52,12 +47,6 @@
     <Cell ss:StyleID="Header"><Data ss:Type="String">RegNo</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Name</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Department</Data></Cell>
-   </Row>
-   <Row>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">student@student.hindustanuniv.ac.in</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">2411001</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Sample Student</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Department of Computer Applications</Data></Cell>
    </Row>
   </Table>
  </Worksheet>
@@ -89,20 +78,6 @@
     <Cell ss:StyleID="Header"><Data ss:Type="String">Starter Code</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Category</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Difficulty</Data></Cell>
-   </Row>
-   <Row>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">EX_1</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Sum and Difference</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Read two integers a and b. Compute and display sum and difference.</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">2026-01-01T00:00</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">2027-12-31T23:59</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">5&#10;3</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Sum: 8&#10;Diff: 2</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">10&#10;4</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Sum: 14&#10;Diff: 6</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">import java.util.Scanner;&#10;&#10;public class Main {&#10;    public static void main(String[] args) {&#10;        Scanner sc = new Scanner(System.in);&#10;        &#10;    }&#10;}</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Basic Java &amp; Operators</Data></Cell>
-    <Cell ss:StyleID="TextCell"><Data ss:Type="String">Easy</Data></Cell>
    </Row>
   </Table>
  </Worksheet>

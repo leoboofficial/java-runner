@@ -54,23 +54,21 @@ export default function App() {
     try {
       const key = portal === 'faculty' ? FACULTY_STORAGE_KEY : STUDENT_STORAGE_KEY;
       const saved = localStorage.getItem(key);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved) as User;
+        if (parsed && parsed.email && parsed.verifiedViaSheet === true) {
+          return parsed;
+        }
+      }
     } catch (e) {}
 
-    if (portal === 'faculty') {
-      return {
-        role: 'FACULTY',
-        email: 'faculty@hindustanuniv.ac.in',
-        name: 'Faculty',
-        department: 'Department of Computer Applications',
-      };
-    }
     return {
-      role: 'STUDENT',
+      role: portal === 'faculty' ? 'FACULTY' : 'STUDENT',
       email: '',
-      name: 'Student',
+      name: '',
       regNo: '',
       department: 'Department of Computer Applications',
+      verifiedViaSheet: false,
     };
   };
 
@@ -95,6 +93,9 @@ export default function App() {
   const handleSelectTab = (tab: 'faculty' | 'student') => {
     setCurrentTab(tab);
     window.location.hash = '#/' + tab;
+    if (tab === 'student' && currentUser.role === 'FACULTY' && currentUser.verifiedViaSheet) {
+      return;
+    }
     setCurrentUser(getStoredUser(tab));
   };
 
@@ -106,38 +107,28 @@ export default function App() {
   const [faculty] = useState<FacultyRecord[]>(INITIAL_FACULTY);
 
   const EVALUATIONS_STORAGE_KEY = 'javalab_pro_evaluations';
-  const [evaluations, setEvaluations] = useState<StudentLabRecordSubmission[]>(() => {
-    try {
-      const saved = localStorage.getItem('javalab_pro_evaluations');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return [];
-  });
+  const [evaluations, setEvaluations] = useState<StudentLabRecordSubmission[]>([]);
 
   const LOGIN_AUDIT_STORAGE_KEY = 'javalab_pro_login_audit';
-  const [loginAudit, setLoginAudit] = useState<LoginAuditRecord[]>(() => {
-    try {
-      const saved = localStorage.getItem('javalab_pro_login_audit');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return [];
-  });
+  const [loginAudit, setLoginAudit] = useState<LoginAuditRecord[]>([]);
 
-  // System Settings read from env with working Google Apps Script endpoint as default
-  const [settings, setSettings] = useState<SystemSettings>(() => {
-    const rawUrl = (import.meta as any).env.VITE_RENDER_SERVICE_URL || 'https://java-runner-uwue.onrender.com/execute';
-    const cleanUrl = typeof rawUrl === 'string' ? rawUrl.trim().replace(/\/+$/, '') : '';
-    const normalizedUrl = cleanUrl && !cleanUrl.endsWith('/execute') && cleanUrl.startsWith('http')
-      ? `${cleanUrl}/execute`
-      : cleanUrl;
+  // System Settings read exclusively from environment variables (.env / GitHub Actions Variables)
+  const [settings] = useState<SystemSettings>(() => {
+    const rawRenderUrl = ((import.meta as any).env.VITE_RENDER_SERVICE_URL || '').trim().replace(/\/+$/, '');
+    const normalizedRenderUrl =
+      rawRenderUrl && !rawRenderUrl.endsWith('/execute') && rawRenderUrl.startsWith('http')
+        ? `${rawRenderUrl}/execute`
+        : rawRenderUrl;
 
-    const savedSheetsUrl = typeof window !== 'undefined' ? localStorage.getItem('javalab_sheets_url') : null;
-    const defaultSheetsUrl = 'https://script.google.com/macros/s/AKfycbxfR4y8U-RvYb-yQxvgFyuvZu4l8v2Mi_KQtF5NVp4I12MAg2_HfLSe6jVQW649u3Pt/exec';
+    const envSheetsUrl = ((import.meta as any).env.VITE_APPS_SCRIPT_URL || '').trim();
+    const savedSheetsUrl = !envSheetsUrl && typeof window !== 'undefined'
+      ? (localStorage.getItem('javalab_sheets_url') || '').trim()
+      : '';
 
     return {
-      renderServiceUrl: normalizedUrl || 'https://java-runner-uwue.onrender.com/execute',
-      apiSecret: (import.meta as any).env.VITE_API_SECRET || 'MY_SECURE_LAB_KEY_123',
-      googleSheetsUrl: (import.meta as any).env.VITE_APPS_SCRIPT_URL || savedSheetsUrl || defaultSheetsUrl,
+      renderServiceUrl: normalizedRenderUrl,
+      apiSecret: ((import.meta as any).env.VITE_API_SECRET || '').trim(),
+      googleSheetsUrl: envSheetsUrl || savedSheetsUrl,
       enforceFullscreen: true,
       blockCopyPaste: true,
       trackTabSwitches: true,
@@ -145,31 +136,29 @@ export default function App() {
     };
   });
 
-  // Sync exercises, evaluations, & loginAudit from Google Sheets
+  // Sync exercises, students, evaluations, & loginAudit directly from Google Sheets
   React.useEffect(() => {
     if (settings.googleSheetsUrl && settings.googleSheetsUrl.startsWith('http')) {
       SheetService.fetchActiveExercises(settings.googleSheetsUrl).then((fetched) => {
-        if (fetched && fetched.length > 0) {
-          setExercises(fetched);
-        }
+        setExercises(fetched);
+      });
+
+      SheetService.fetchStudents(settings.googleSheetsUrl).then((fetchedStudents) => {
+        setStudents(fetchedStudents);
       });
 
       SheetService.fetchEvaluations(settings.googleSheetsUrl).then((fetchedEvals) => {
-        if (fetchedEvals && fetchedEvals.length > 0) {
-          setEvaluations(fetchedEvals);
-          try {
-            localStorage.setItem(EVALUATIONS_STORAGE_KEY, JSON.stringify(fetchedEvals));
-          } catch (e) {}
-        }
+        setEvaluations(fetchedEvals);
+        try {
+          localStorage.setItem(EVALUATIONS_STORAGE_KEY, JSON.stringify(fetchedEvals));
+        } catch (e) {}
       });
 
       SheetService.fetchLoginAudit(settings.googleSheetsUrl).then((fetchedAudit) => {
-        if (fetchedAudit && fetchedAudit.length > 0) {
-          setLoginAudit(fetchedAudit);
-          try {
-            localStorage.setItem(LOGIN_AUDIT_STORAGE_KEY, JSON.stringify(fetchedAudit));
-          } catch (e) {}
-        }
+        setLoginAudit(fetchedAudit);
+        try {
+          localStorage.setItem(LOGIN_AUDIT_STORAGE_KEY, JSON.stringify(fetchedAudit));
+        } catch (e) {}
       });
     }
   }, [settings.googleSheetsUrl]);
@@ -203,11 +192,8 @@ export default function App() {
       const syncResult = await SheetService.saveExercise(settings.googleSheetsUrl, newEx);
       if (syncResult.success) {
         showToast(`Synced "${newEx.title}" to Google Sheet Exercises tab with Starter Code!`);
-        // Refresh active exercises to ensure full sync
         const fresh = await SheetService.fetchActiveExercises(settings.googleSheetsUrl);
-        if (fresh && fresh.length > 0) {
-          setExercises(fresh);
-        }
+        setExercises(fresh);
       } else {
         showToast(`Saved locally. Warning: ${syncResult.message || 'Check Apps Script deployment.'}`, 'warn');
       }
@@ -216,43 +202,41 @@ export default function App() {
     }
   };
 
-  // Faculty: Add student to roster
-  const handleAddStudent = (newStu: StudentRecord) => {
+  // Faculty: Add student to roster & Google Sheet
+  const handleAddStudent = async (newStu: StudentRecord) => {
     setStudents((prev) => [newStu, ...prev]);
-    showToast(`Student ${newStu.name} (${newStu.regNo}) enrolled in roster!`);
+    if (settings.googleSheetsUrl) {
+      const res = await SheetService.saveStudent(settings.googleSheetsUrl, newStu);
+      if (res.success) {
+        showToast(`Student ${newStu.name} (${newStu.regNo}) synced to Students sheet!`);
+        return;
+      }
+    }
+    showToast(`Student ${newStu.name} (${newStu.regNo}) added locally.`);
   };
 
   // Faculty: Manually trigger re-sync from Google Sheets
   const handleRefreshFromSheets = async () => {
     if (settings.googleSheetsUrl) {
-      showToast('Syncing exercises, evaluations & login audit from Google Sheet...');
-      const [fresh, freshEvals, freshAudit] = await Promise.all([
+      showToast('Syncing exercises, students, evaluations & login audit from Google Sheet...');
+      const [fresh, freshStudents, freshEvals, freshAudit] = await Promise.all([
         SheetService.fetchActiveExercises(settings.googleSheetsUrl),
+        SheetService.fetchStudents(settings.googleSheetsUrl),
         SheetService.fetchEvaluations(settings.googleSheetsUrl),
         SheetService.fetchLoginAudit(settings.googleSheetsUrl),
       ]);
-      if (fresh && fresh.length > 0) {
-        setExercises(fresh);
-      }
-      if (freshEvals && freshEvals.length > 0) {
-        setEvaluations(freshEvals);
-        try {
-          localStorage.setItem(EVALUATIONS_STORAGE_KEY, JSON.stringify(freshEvals));
-        } catch (e) {}
-      }
-      if (freshAudit && freshAudit.length > 0) {
-        setLoginAudit(freshAudit);
-        try {
-          localStorage.setItem(LOGIN_AUDIT_STORAGE_KEY, JSON.stringify(freshAudit));
-        } catch (e) {}
-      }
-      if (fresh && fresh.length > 0) {
-        showToast(
-          `Synced ${fresh.length} exercise(s), ${freshEvals.length} evaluation(s), ${freshAudit.length} login audit row(s)!`
-        );
-      } else {
-        showToast('Google Sheet reachable, but returned 0 active exercises.', 'warn');
-      }
+      setExercises(fresh);
+      setStudents(freshStudents);
+      setEvaluations(freshEvals);
+      setLoginAudit(freshAudit);
+      try {
+        localStorage.setItem(EVALUATIONS_STORAGE_KEY, JSON.stringify(freshEvals));
+        localStorage.setItem(LOGIN_AUDIT_STORAGE_KEY, JSON.stringify(freshAudit));
+      } catch (e) {}
+
+      showToast(
+        `Synced ${fresh.length} exercise(s), ${freshStudents.length} student(s), ${freshEvals.length} evaluation(s), ${freshAudit.length} login audit row(s)!`
+      );
     } else {
       showToast('Google Sheets URL is not configured.', 'warn');
     }
@@ -581,6 +565,24 @@ export default function App() {
     }
   };
 
+  const handleLogout = () => {
+    try {
+      const key = currentTab === 'faculty' ? FACULTY_STORAGE_KEY : STUDENT_STORAGE_KEY;
+      localStorage.removeItem(key);
+    } catch (e) {}
+    setCurrentUser({
+      role: currentTab === 'faculty' ? 'FACULTY' : 'STUDENT',
+      email: '',
+      name: '',
+      regNo: '',
+      department: 'Department of Computer Applications',
+      verifiedViaSheet: false,
+    });
+    showToast('Signed out.');
+  };
+
+  const isAuthenticated = Boolean(currentUser.email && currentUser.verifiedViaSheet);
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans antialiased selection:bg-indigo-600 selection:text-white">
       {/* Top Header with Portal Switcher - No Settings Modal trigger */}
@@ -589,6 +591,7 @@ export default function App() {
         onSelectTab={handleSelectTab}
         currentUser={currentUser}
         onOpenLogin={() => setIsAuthOpen(true)}
+        onLogout={handleLogout}
         onOpenManual={() => setIsManualOpen(true)}
         settings={settings}
         activeViolationsCount={violations.filter((v) => v.severity === 'high').length}
@@ -616,35 +619,51 @@ export default function App() {
 
       {/* Main Workspace Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {currentTab === 'faculty' && (
-          <FacultyDashboard
+        {!isAuthenticated ? (
+          <AuthModal
+            isOpen={true}
+            inline={true}
+            onClose={() => {}}
             currentUser={currentUser}
-            exercises={exercises}
-            submissions={submissions}
-            violations={violations}
-            students={students}
-            evaluations={evaluations}
-            loginAudit={loginAudit}
-            onSaveExercise={handleSaveExercise}
-            onAddStudent={handleAddStudent}
-            onSaveEvaluation={handleSaveEvaluation}
-            onAutoEvaluateAll={handleAutoEvaluateAll}
-            onRefreshExercises={handleRefreshFromSheets}
+            onLogin={handleLogin}
+            facultyList={faculty}
+            studentsList={students}
+            googleSheetsUrl={settings.googleSheetsUrl}
+            portalRole={currentTab}
           />
-        )}
+        ) : (
+          <>
+            {currentTab === 'faculty' && (
+              <FacultyDashboard
+                currentUser={currentUser}
+                exercises={exercises}
+                submissions={submissions}
+                violations={violations}
+                students={students}
+                evaluations={evaluations}
+                loginAudit={loginAudit}
+                onSaveExercise={handleSaveExercise}
+                onAddStudent={handleAddStudent}
+                onSaveEvaluation={handleSaveEvaluation}
+                onAutoEvaluateAll={handleAutoEvaluateAll}
+                onRefreshExercises={handleRefreshFromSheets}
+              />
+            )}
 
-        {currentTab === 'student' && (
-          <StudentDashboard
-            currentUser={currentUser}
-            exercises={exercises}
-            submissions={submissions}
-            students={students}
-            violations={violations}
-            evaluations={evaluations}
-            onSubmitCode={handleSubmitCode}
-            onSubmitLabRecord={handleSubmitLabRecord}
-            settings={settings}
-          />
+            {currentTab === 'student' && (
+              <StudentDashboard
+                currentUser={currentUser}
+                exercises={exercises}
+                submissions={submissions}
+                students={students}
+                violations={violations}
+                evaluations={evaluations}
+                onSubmitCode={handleSubmitCode}
+                onSubmitLabRecord={handleSubmitLabRecord}
+                settings={settings}
+              />
+            )}
+          </>
         )}
       </main>
 

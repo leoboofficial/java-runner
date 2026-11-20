@@ -9,6 +9,7 @@ export interface User {
   name: string;
   regNo?: string;
   department?: string;
+  verifiedViaSheet?: boolean;
 }
 
 export interface Exercise {

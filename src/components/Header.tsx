@@ -9,6 +9,7 @@ import {
   Check,
   Eye,
   BookOpen,
+  LogOut,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -16,6 +17,7 @@ interface HeaderProps {
   onSelectTab: (tab: 'faculty' | 'student') => void;
   currentUser: User;
   onOpenLogin: () => void;
+  onLogout?: () => void;
   onOpenManual?: () => void;
   settings: SystemSettings;
   activeViolationsCount: number;
@@ -26,9 +28,10 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectTab,
   currentUser,
   onOpenLogin,
+  onLogout,
   onOpenManual,
-  settings,
 }) => {
+  const isVerified = Boolean(currentUser.email && currentUser.verifiedViaSheet);
   const [copiedLink, setCopiedLink] = useState(false);
 
   const copyStudentLink = () => {
@@ -71,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <Terminal className="w-4 h-4 text-emerald-600" />
                   <span>JAVA LAB Workspace</span>
                 </div>
-                {currentUser.role === 'FACULTY' && (
+                {isVerified && currentUser.role === 'FACULTY' && (
                   <button
                     onClick={() => onSelectTab('faculty')}
                     className="text-xs text-indigo-700 hover:text-indigo-800 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 font-semibold transition flex items-center gap-1.5 shadow-xs"
@@ -89,26 +92,30 @@ export const Header: React.FC<HeaderProps> = ({
                   <GraduationCap className="w-4 h-4 text-indigo-600" />
                   <span>Faculty Management Portal</span>
                 </div>
-                <button
-                  onClick={() => onSelectTab('student')}
-                  className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold border border-slate-200 transition"
-                  title="Preview what students see in their exam workspace"
-                >
-                  <Eye className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Preview Student IDE</span>
-                </button>
-                <button
-                  onClick={copyStudentLink}
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold border border-slate-200 transition"
-                  title="Copy Student Exam URL (/#/student) to share with your students"
-                >
-                  {copiedLink ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  ) : (
-                    <Share2 className="w-3.5 h-3.5 text-amber-600" />
-                  )}
-                  <span>{copiedLink ? 'Copied Student Link!' : 'Share Student URL'}</span>
-                </button>
+                {isVerified && (
+                  <>
+                    <button
+                      onClick={() => onSelectTab('student')}
+                      className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold border border-slate-200 transition"
+                      title="Preview what students see in their exam workspace"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Preview Student IDE</span>
+                    </button>
+                    <button
+                      onClick={copyStudentLink}
+                      className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold border border-slate-200 transition"
+                      title="Copy Student Exam URL (/#/student) to share with your students"
+                    >
+                      {copiedLink ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Share2 className="w-3.5 h-3.5 text-amber-600" />
+                      )}
+                      <span>{copiedLink ? 'Copied Student Link!' : 'Share Student URL'}</span>
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -118,27 +125,44 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenLogin}
               className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-left transition shadow-xs group"
-              title="Manage user session"
+              title={isVerified ? 'Switch authenticated account' : 'Sign in with Google Sheet credentials'}
             >
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentUser.role === 'FACULTY'
+                  currentTab === 'faculty'
                     ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
                     : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                 }`}
               >
-                {currentUser.role === 'FACULTY' ? 'F' : 'S'}
+                {currentTab === 'faculty' ? 'F' : 'S'}
               </div>
               <div className="hidden md:block">
                 <div className="text-xs font-semibold text-slate-800 group-hover:text-slate-900 leading-tight">
-                  {currentUser.name}
+                  {isVerified ? currentUser.name : 'Sign In'}
                 </div>
                 <div className="text-[10px] text-slate-500 flex items-center gap-1">
-                  <span>{currentUser.role === 'FACULTY' ? 'Faculty' : currentUser.regNo || 'Student'}</span>
+                  <span>
+                    {isVerified
+                      ? currentUser.role === 'FACULTY'
+                        ? currentUser.email
+                        : currentUser.regNo || currentUser.email
+                      : 'Verify via Google Sheet'}
+                  </span>
                 </div>
               </div>
               <Users className="w-3.5 h-3.5 text-slate-400 ml-1 group-hover:text-slate-600" />
             </button>
+
+            {isVerified && onLogout && (
+              <button
+                onClick={onLogout}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-700 text-xs font-semibold transition shadow-xs"
+                title="Sign out of current session"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </button>
+            )}
 
             {onOpenManual && (
               <button

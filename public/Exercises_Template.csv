@@ -1,13 +1,1 @@
 Exercise ID,Title,Description,Open Time,Close Time,Public Input,Public Output,Private Input,Private Output,Starter Code,Category,Difficulty
-EX_1,Sum and Difference,Read two integers a and b. Compute and display sum, difference, product, quotient, and remainder.,2026-01-01T00:00,2027-12-31T23:59,"5
-3","Sum: 8
-Diff: 2","10
-4","Sum: 14
-Diff: 6","import java.util.Scanner;
-
-public class Main {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        
-    }
-}","Basic Java & Operators",Easy

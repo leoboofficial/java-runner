@@ -26,12 +26,14 @@ function doGet(e) {
       message: "JavaLabPro Google Apps Script Headless API is online and ready.",
       endpoints: [
         "?action=getActiveExercises",
+        "?action=getStudents",
         "?action=getEvaluations",
         "?action=getLoginAudit",
         "?action=saveExercise&payload=...",
+        "?action=addStudent&payload=...",
         "?action=saveEvaluation&payload=...",
         "?action=submitLabRecord&payload=...",
-        "?action=login&email=...&regNo=...&personalEmail=...&deviceId=...",
+        "?action=login&email=...&regNo=...&portalRole=...&personalEmail=...&deviceId=...",
         "?action=setup"
       ]
     });
@@ -48,6 +50,7 @@ function doPost(e) {
     let regNo = '';
     let personalEmail = '';
     let deviceId = '';
+    let portalRole = '';
 
     if (e && e.postData && e.postData.contents) {
       try {
@@ -58,6 +61,7 @@ function doPost(e) {
         regNo = parsed.regNo;
         personalEmail = parsed.personalEmail;
         deviceId = parsed.deviceId;
+        portalRole = parsed.portalRole;
       } catch (parseErr) {
         if (e.parameter) {
           action = e.parameter.action;
@@ -71,6 +75,9 @@ function doPost(e) {
 
     if (action === 'saveExercise') {
       return jsonResponse(saveExercise(payload));
+    }
+    if (action === 'addStudent') {
+      return jsonResponse(addStudent(payload));
     }
     if (action === 'submit') {
       return jsonResponse(saveSubmissionAndViolations(payload));
@@ -87,7 +94,8 @@ function doPost(e) {
           email || (payload && payload.email),
           regNo || (payload && payload.regNo),
           personalEmail || (payload && payload.personalEmail),
-          deviceId || (payload && payload.deviceId)
+          deviceId || (payload && payload.deviceId),
+          portalRole || (payload && payload.portalRole)
         )
       );
     }
@@ -101,6 +109,9 @@ function handleApiGet(e) {
   const action = e.parameter.action;
   if (action === 'getActiveExercises') {
     return jsonResponse(getActiveExercises());
+  }
+  if (action === 'getStudents') {
+    return jsonResponse(getStudents());
   }
   if (action === 'getEvaluations') {
     return jsonResponse(getEvaluations());
@@ -116,6 +127,15 @@ function handleApiGet(e) {
       payload = e.parameter;
     }
     return jsonResponse(saveExercise(payload));
+  }
+  if (action === 'addStudent') {
+    let payload = {};
+    if (e.parameter.payload) {
+      try { payload = JSON.parse(e.parameter.payload); } catch (pErr) { payload = e.parameter; }
+    } else {
+      payload = e.parameter;
+    }
+    return jsonResponse(addStudent(payload));
   }
   if (action === 'submit') {
     let payload = {};
@@ -150,7 +170,8 @@ function handleApiGet(e) {
         e.parameter.email,
         e.parameter.regNo,
         e.parameter.personalEmail,
-        e.parameter.deviceId
+        e.parameter.deviceId,
+        e.parameter.portalRole
       )
     );
   }
@@ -225,36 +246,72 @@ function detectMultiStudentProxy(regNo, personalEmail, deviceId) {
   return { isFlagged: false, otherRegs: [], message: 'CLEAR' };
 }
 
-// 1. VERIFY DETAILS, RECORD PERSONAL MAIL ID & DEVICE ID, AND DETECT MULTI-STUDENT PROXY
-function loginUserManual(email, regNo, personalEmail, deviceId) {
+// 1. STRICTLY VALIDATE AGAINST GOOGLE SHEET (FACULTY OR STUDENTS TAB)
+function loginUserManual(email, regNo, personalEmail, deviceId, portalRole) {
   const cleanEmail = (email || '').trim().toLowerCase();
   const cleanReg = (regNo || '').trim().toUpperCase();
   const cleanPersonalMail = (personalEmail || '').trim().toLowerCase();
   const cleanDeviceId = (deviceId || '').trim();
+  const requestedRole = (portalRole || '').toString().trim().toUpperCase();
 
-  // 1. Check Faculty Sheet
-  const facultySheet = getSheet('Faculty');
-  const facultyData = facultySheet.getDataRange().getValues();
-  for (let i = 1; i < facultyData.length; i++) {
-    const fEmail = (facultyData[i][0] || '').toString().trim().toLowerCase();
-    if (fEmail === cleanEmail) {
-      return { 
-        role: 'FACULTY', 
-        email: cleanEmail, 
-        name: facultyData[i][1] || 'Faculty Member',
-        department: facultyData[i][2] || 'Department of Computer Applications'
+  if (!cleanEmail) {
+    return {
+      role: 'UNAUTHORIZED',
+      error: 'Access Denied: Email address is required.'
+    };
+  }
+
+  // 1. Check Faculty Sheet (only when Faculty portal is requested or no specific Student role/regNo provided)
+  if (requestedRole === 'FACULTY' || (!requestedRole && !cleanReg)) {
+    const facultySheet = getSheet('Faculty');
+    const facultyData = facultySheet.getDataRange().getValues();
+    if (facultyData.length <= 1) {
+      return {
+        role: 'UNAUTHORIZED',
+        error: 'Access Denied: Faculty Google Sheet is empty. Add your faculty email in the Faculty tab first.'
+      };
+    }
+    for (let i = 1; i < facultyData.length; i++) {
+      const fEmail = (facultyData[i][0] || '').toString().trim().toLowerCase();
+      if (fEmail && fEmail === cleanEmail) {
+        return {
+          role: 'FACULTY',
+          email: cleanEmail,
+          name: facultyData[i][1] || cleanEmail,
+          department: facultyData[i][2] || 'Department of Computer Applications'
+        };
+      }
+    }
+    if (requestedRole === 'FACULTY') {
+      return {
+        role: 'UNAUTHORIZED',
+        error: 'Access Denied: "' + cleanEmail + '" is not authorized in the Faculty Google Sheet tab.'
       };
     }
   }
 
-  // 2. Check Students Sheet (official email + RegNo)
+  // 2. Check Students Sheet (BOTH official email AND RegNo are strictly required)
+  if (!cleanReg) {
+    return {
+      role: 'UNAUTHORIZED',
+      error: 'Access Denied: Registration Number is required for student login.'
+    };
+  }
+
   const studentSheet = getSheet('Students');
   const studentData = studentSheet.getDataRange().getValues();
+  if (studentData.length <= 1) {
+    return {
+      role: 'UNAUTHORIZED',
+      error: 'Access Denied: Students Google Sheet is empty. Add enrolled students in the Students tab first.'
+    };
+  }
+
   for (let i = 1; i < studentData.length; i++) {
     const sEmail = (studentData[i][0] || '').toString().trim().toLowerCase();
     const sReg = (studentData[i][1] || '').toString().trim().toUpperCase();
-    if (sEmail === cleanEmail && (!cleanReg || sReg === cleanReg)) {
-      const stuName = studentData[i][2] || 'Student';
+    if (sEmail && sReg && sEmail === cleanEmail && sReg === cleanReg) {
+      const stuName = studentData[i][2] || cleanEmail;
       const stuDept = studentData[i][3] || 'Department of Computer Applications';
 
       // Check if same Personal Mail ID or Device ID was already used for ANOTHER student!
@@ -284,22 +341,22 @@ function loginUserManual(email, regNo, personalEmail, deviceId) {
       auditSheet.appendRow(auditRow);
       auditSheet.getRange(auditSheet.getLastRow(), 1, 1, auditRow.length).setNumberFormat('@');
 
-      return { 
-        role: 'STUDENT', 
-        email: cleanEmail, 
+      return {
+        role: 'STUDENT',
+        email: cleanEmail,
         personalEmail: cleanPersonalMail,
         deviceId: cleanDeviceId,
         multiStudentAlert: proxyCheck.isFlagged ? proxyCheck.message : '',
-        regNo: sReg, 
+        regNo: sReg,
         name: stuName,
         department: stuDept
       };
     }
   }
 
-  return { 
-    role: 'UNAUTHORIZED', 
-    error: 'Access Denied: Official Email (' + cleanEmail + ') or Reg No mismatch. Please check credentials in the Students sheet.' 
+  return {
+    role: 'UNAUTHORIZED',
+    error: 'Access Denied: Official Email (' + cleanEmail + ') and Reg No (' + cleanReg + ') do not match any record in the Students Google Sheet tab.'
   };
 }
 
@@ -716,7 +773,59 @@ function getLoginAudit() {
   return results;
 }
 
-// 9. INITIALIZE ALL 7 SHEETS WITH STANDARD HEADERS
+// 8b. FETCH & ENROLL STUDENTS FROM STUDENTS SHEET
+function getStudents() {
+  const sheet = getSheet('Students');
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length <= 1) return [];
+
+  const results = [];
+  for (let i = 1; i < rows.length; i++) {
+    const email = String(rows[i][0] || '').trim().toLowerCase();
+    const regNo = String(rows[i][1] || '').trim().toUpperCase();
+    if (!email && !regNo) continue;
+    results.push({
+      email: email,
+      regNo: regNo,
+      name: String(rows[i][2] || '').trim(),
+      department: String(rows[i][3] || 'Department of Computer Applications').trim()
+    });
+  }
+  return results;
+}
+
+function addStudent(payload) {
+  if (!payload) return { success: false, error: 'No student payload provided' };
+  const email = (payload.email || '').toString().trim().toLowerCase();
+  const regNo = (payload.regNo || '').toString().trim().toUpperCase();
+  const name = (payload.name || '').toString().trim();
+  const dept = (payload.department || 'Department of Computer Applications').toString().trim();
+  if (!email || !regNo) return { success: false, error: 'Email and RegNo are required' };
+
+  const sheet = getSheet('Students');
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['Email', 'RegNo', 'Name', 'Department']);
+    sheet.getRange(1, 1, 1, 4).setFontWeight('bold');
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    const rEmail = String(rows[i][0] || '').trim().toLowerCase();
+    const rReg = String(rows[i][1] || '').trim().toUpperCase();
+    if (rEmail === email || rReg === regNo) {
+      const range = sheet.getRange(i + 1, 1, 1, 4);
+      range.setNumberFormat('@');
+      range.setValues([[email, regNo, name, dept]]);
+      return { success: true, message: 'Student ' + regNo + ' updated in Students sheet!' };
+    }
+  }
+
+  sheet.appendRow([email, regNo, name, dept]);
+  sheet.getRange(sheet.getLastRow(), 1, 1, 4).setNumberFormat('@');
+  return { success: true, message: 'Student ' + regNo + ' added to Students sheet!' };
+}
+
+// 9. INITIALIZE ALL 7 SHEETS WITH STANDARD HEADERS (NO SAMPLE DATA)
 function setupAllSheets() {
   const exSheet = getSheet('Exercises');
   if (exSheet.getLastRow() === 0) {
@@ -732,14 +841,12 @@ function setupAllSheets() {
   if (facSheet.getLastRow() === 0) {
     facSheet.appendRow(['Email', 'Name', 'Department']);
     facSheet.getRange(1, 1, 1, 3).setFontWeight('bold');
-    facSheet.appendRow(['faculty@hindustanuniv.ac.in', 'Dr. Faculty Admin', 'Department of Computer Applications']);
   }
 
   const stuSheet = getSheet('Students');
   if (stuSheet.getLastRow() === 0) {
     stuSheet.appendRow(['Email', 'RegNo', 'Name', 'Department']);
     stuSheet.getRange(1, 1, 1, 4).setFontWeight('bold');
-    stuSheet.appendRow(['student@student.hindustanuniv.ac.in', '2411001', 'Sample Student', 'Department of Computer Applications']);
   }
 
   const loginSheet = getSheet('LoginAudit');
@@ -779,5 +886,5 @@ function setupAllSheets() {
     evalSheet.getRange(1, 1, 1, 16).setFontWeight('bold');
   }
 
-  return { success: true, message: 'All 7 Google Sheet tabs initialized successfully with Mail ID & Multi-Student Proxy Audit!' };
+  return { success: true, message: 'All 7 Google Sheet tabs initialized cleanly with headers only (no sample data).' };
 }
