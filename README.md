@@ -303,8 +303,10 @@ You can import the ready-made 7-tab Excel workbook **`/public/JavaLabPro_Databas
 ### Step 3: Deploy Frontend to GitHub Pages
 1. Configure `VITE_APPS_SCRIPT_URL`, `VITE_RENDER_SERVICE_URL`, `VITE_API_SECRET`, and optionally `VITE_GOOGLE_CLIENT_ID` in **Settings > Secrets and variables > Actions > Variables** (and in `.env` for local runs).
    - *(If setting `VITE_GOOGLE_CLIENT_ID`, add your GitHub Pages origin `https://<username>.github.io` under Authorized JavaScript origins in Google Cloud Console > Credentials.)*
-2. Enable **GitHub Actions** under **Settings > Pages > Build and deployment > Source**.
-3. Push to `main` (or run `npm run build` and publish `docs/`):
+2. Under **Settings > Pages > Build and deployment > Source**:
+   - Select **GitHub Actions** *(Recommended — uses `.github/workflows/deploy.yml` with `upload-pages-artifact@v4` + `deploy-pages@v4`)*.
+   - **Important**: Do **not** set Source to `Deploy from a branch -> / (root)`, because serving the unbuilt root `index.html` causes `main.tsx: 404` in the browser. (If you prefer branch deployment, choose `main` -> `/docs` and add an empty `.nojekyll` file.)
+3. Push to `main` (or trigger **Actions > Deploy to GitHub Pages > Run workflow**):
    - **Student Portal**: `https://<username>.github.io/<repo>/#/student`
    - **Faculty Portal**: `https://<username>.github.io/<repo>/#/faculty`
 
