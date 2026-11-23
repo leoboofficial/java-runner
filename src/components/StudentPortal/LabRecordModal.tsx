@@ -1263,9 +1263,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
                           <td className="border border-slate-900 p-2 font-mono print:border-black text-center">
                             {item.pageNo}
                           </td>
-                          <td className="border border-slate-900 p-2 print:border-black text-[10px] font-serif italic text-center">
-                            {isApproved ? (evaluation?.evaluatedBy?.split(',')[0] || 'Dr. Sathish Kumar M') : ''}
-                          </td>
+                          <td className="border border-slate-900 p-2 print:border-black"></td>
                         </tr>
                       ))
                     )}
