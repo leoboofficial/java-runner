@@ -3,7 +3,7 @@
 @layer base {
   @page {
     size: A4 portrait;
-    margin: 12mm 15mm 15mm 15mm;
+    margin: 10mm 14mm 12mm 14mm;
   }
 }
 
@@ -11,7 +11,7 @@
   html, body, #root {
     width: 100% !important;
     height: auto !important;
-    min-height: 100% !important;
+    min-height: 0 !important;
     overflow: visible !important;
     position: static !important;
     margin: 0 !important;
@@ -20,6 +20,11 @@
     color: black !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  /* Exclude the entire app dashboard shell when printing the Lab Record modal */
+  body.lab-record-print-active > #root {
+    display: none !important;
   }
 
   /* Hide standard web app shell */

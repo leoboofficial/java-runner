@@ -1,20 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Printer,
-  FileText,
   GraduationCap,
   Users,
-  ShieldCheck,
-  Terminal,
   BookOpen,
   CheckCircle2,
-  Database,
-  Lock,
   ShieldAlert,
-  Clock,
-  Code2,
   UserCog,
+  SlidersHorizontal,
+  Award,
+  FileText,
 } from 'lucide-react';
 
 interface UserManualModalProps {
@@ -28,6 +25,17 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
   onClose,
   role,
 }) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('lab-record-print-active');
+    } else {
+      document.body.classList.remove('lab-record-print-active');
+    }
+    return () => {
+      document.body.classList.remove('lab-record-print-active');
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handlePrint = () => {
@@ -37,8 +45,8 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
   const isFaculty = role === 'FACULTY';
   const isCoordinator = role === 'COORDINATOR';
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-2 sm:p-4 print:p-0 print:bg-white print:static">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-2 sm:p-4 print:p-0 print:bg-white print:static print-modal-container">
       <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-5xl h-[92vh] flex flex-col shadow-2xl overflow-hidden print:w-full print:h-auto print:border-none print:shadow-none print:rounded-none text-slate-900">
         
         {/* Modal Top Control Bar (Hidden when printing) */}
@@ -84,10 +92,10 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
               </div>
               <p className="text-xs text-slate-500">
                 {isCoordinator
-                  ? 'Standard operating procedures for managing authorized course teachers, default password security, and OTP recovery.'
+                  ? 'Standard operating procedures for managing authorized course teachers, password security, and OTP recovery.'
                   : isFaculty
-                  ? 'Standard operating procedures for scheduling, roster management, marksheet exports, and proctoring review.'
-                  : 'Operational guidelines for coding, testing, anti-cheating compliance, and practical record generation.'}
+                  ? 'SOP for ESE Practical Mode, Dynamic LAB/ESE Rubrics, question banks, marksheet exports, and proctoring audit.'
+                  : 'Operational guidelines for program switching, draft auto-saving, error debugging, proctoring compliance, and Lab Record PDF export.'}
               </p>
             </div>
           </div>
@@ -117,7 +125,7 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
         </div>
 
         {/* Document Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-8 text-slate-800 text-sm leading-relaxed print:overflow-visible print:p-0 print:text-black print:text-xs">
+        <div className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-8 text-slate-800 text-sm leading-relaxed print:overflow-visible print:p-2 print:text-black print:text-xs">
           {isCoordinator ? (
             /* ======================================================== */
             /*                COORDINATOR USER MANUAL ONLY              */
@@ -133,13 +141,13 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
                       JavaLabPro: Course Coordinator &amp; Handler Directory Manual
                     </h1>
                     <p className="text-slate-500 text-xs mt-1 print:text-gray-700">
-                      Managing Course Handlers in the Faculty Sheet, First-Login Password Security, and Email OTP Recovery
+                      Managing Course Handlers in the Faculty Sheet, Account Password Security, and Email OTP Recovery
                     </p>
                   </div>
                   <div className="text-right hidden sm:block">
                     <div className="text-xs font-bold text-violet-600 print:text-black">Portal: /#/coordinator</div>
-                    <div className="text-[11px] text-slate-500 print:text-gray-600">Default User: coordinator</div>
-                    <div className="text-[11px] text-emerald-600 print:text-black font-semibold mt-0.5">Sheet Tab: Faculty &amp; CoordinatorAuth</div>
+                    <div className="text-[11px] text-slate-500 print:text-gray-600">Auth Tab: CoordinatorAuth</div>
+                    <div className="text-[11px] text-emerald-600 print:text-black font-semibold mt-0.5">Directory Tab: Faculty</div>
                   </div>
                 </div>
               </div>
@@ -147,12 +155,13 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
               <section className="space-y-3">
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-1">
                   <span className="w-6 h-6 rounded-md bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold">1</span>
-                  Authentication, Password Change &amp; OTP Recovery
+                  Authentication, Password Security &amp; OTP Recovery
                 </h2>
                 <ul className="text-xs list-disc list-inside space-y-1.5 text-slate-700">
-                  <li><strong>Default Credentials:</strong> Username <code className="font-mono font-bold">coordinator</code> and initial password <code className="font-mono font-bold">Admin@123</code>.</li>
-                  <li><strong>First-Time Login Security:</strong> After signing in for the first time, use the prompted <strong>Change Default Password</strong> panel to set a new password and register your Official Email ID for password recovery.</li>
-                  <li><strong>Forgot Password (Email OTP):</strong> Click <strong>Forgot Password?</strong> on the sign-in screen, enter your Official Email ID, verify the 6-digit OTP sent to your inbox, and set a new password.</li>
+                  <li><strong>Coordinator Sign-In:</strong> Open <code className="font-mono font-bold">/#/coordinator</code> and sign in using the Coordinator credentials configured in the <code className="font-mono">CoordinatorAuth</code> tab of the connected Google Sheet.</li>
+                  <li><strong>First-Time Login Security:</strong> On initial login, you are prompted to change the default password (stored as a SHA-256 hash) and register an <strong>Official Email ID</strong> for recovery.</li>
+                  <li><strong>Forgot Password (Email OTP):</strong> Click <strong>Forgot Password?</strong> on the sign-in screen, enter your registered Official Email ID, retrieve the 6-digit OTP sent via Google Apps Script (<code className="font-mono">MailApp.sendEmail</code>, valid for 10 minutes), verify the OTP, and set a new password.</li>
+                  <li><strong>Update Password Anytime:</strong> Inside the dashboard header/security card, you can update your password or Official Email ID whenever needed.</li>
                 </ul>
               </section>
 
@@ -162,9 +171,9 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
                   Adding &amp; Editing Course Handlers (Faculty Sheet)
                 </h2>
                 <ul className="text-xs list-disc list-inside space-y-1.5 text-slate-700">
-                  <li><strong>Add Course Teacher:</strong> Enter <strong>Email</strong>, <strong>Name</strong>, and <strong>Department</strong>, then click <strong>Add Course Handler</strong> to save directly to the <code className="font-mono">Faculty</code> sheet tab.</li>
-                  <li><strong>Edit Existing Teacher:</strong> Click <strong>Edit User</strong> beside any teacher row to load their Email, Name, and Department into the form, update the values, and click <strong>Save Changes</strong> to overwrite the row in Google Sheets.</li>
-                  <li><strong>Live Faculty Sign-In Access:</strong> Any course teacher added or updated here can immediately sign in on <code className="font-mono">/#/faculty</code>.</li>
+                  <li><strong>Add Course Handler:</strong> Enter the faculty member&apos;s <strong>Official Email</strong>, <strong>Name</strong>, and <strong>Department</strong>, then click <strong>Add Course Handler</strong> to append them directly to the <code className="font-mono">Faculty</code> tab in Google Sheets.</li>
+                  <li><strong>Edit Existing Teacher:</strong> Click <strong>Edit User</strong> beside any teacher row in the directory to load their details into the editor form. Modify the Email, Name, or Department and click <strong>Save Changes</strong> to update that exact row in Google Sheets.</li>
+                  <li><strong>Live Faculty Authentication Sync:</strong> Faculty login on <code className="font-mono">/#/faculty</code> validates strictly against the <code className="font-mono">Faculty</code> sheet tab—any teacher added or updated by the Coordinator receives immediate portal access.</li>
                 </ul>
               </section>
             </>
@@ -184,30 +193,37 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
                       JavaLabPro: Faculty Examination &amp; Course Management Manual
                     </h1>
                     <p className="text-slate-500 text-xs mt-1 print:text-gray-700">
-                      Standard Operating Procedures for Scheduling Exercises, Marksheet Export, and Proctoring Audit
+                      SOP for ESE Practical Mode, Question Bank, Dynamic LAB/ESE Rubrics, Lab Record Inspection &amp; Proctoring Audit
                     </p>
                   </div>
                   <div className="text-right hidden sm:block">
                     <div className="text-xs font-bold text-indigo-600 print:text-black">Portal: /#/faculty</div>
-                    <div className="text-[11px] text-slate-500 print:text-gray-600">Configuration: Method B (.env file)</div>
+                    <div className="text-[11px] text-slate-500 print:text-gray-600">Auth: Validated via Faculty Sheet</div>
                     <div className="text-[11px] text-emerald-600 print:text-black font-semibold mt-0.5">Execution: Eclipse Temurin JDK 17</div>
                   </div>
                 </div>
               </div>
 
-              {/* Section 1: Configuration */}
+              {/* Section 1: Configuration & ESE Practical Switch */}
               <section className="space-y-3">
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-1 print:text-black print:border-black">
                   <span className="w-6 h-6 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold print:border print:border-black">1</span>
-                  Configuration Security (.env Architecture)
+                  Live ESE Practical Mode Switch &amp; Environment Security
                 </h2>
-                <p className="text-xs text-slate-700 print:text-black">
-                  To protect the backend from tampering by students and prevent application crashes, all endpoints are read securely from your build environment variables:
-                </p>
+                <div className="p-4 rounded-xl bg-indigo-50/70 border border-indigo-200 space-y-2 text-xs text-slate-700">
+                  <div className="font-bold text-indigo-900 flex items-center gap-1.5">
+                    <SlidersHorizontal className="w-4 h-4 text-indigo-600" />
+                    <span>Student Exam Visibility Mode (ExamConfig Sheet)</span>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li><strong>Regular Lab Mode (ESE OFF):</strong> Students on <code className="font-mono">/#/student</code> see only <strong>LAB</strong> exercises and have access to the <strong>Generate Lab Record (PDF)</strong> workflow.</li>
+                    <li><strong>ESE Practical Exam Mode (ESE ON):</strong> Enable the toggle in the top banner and customize the exam title (e.g., <em>BCB52003 End Semester Practical Examination</em>). The Student IDE switches immediately to display only <strong>ESE</strong> questions and hides Lab Record generation during the exam.</li>
+                  </ul>
+                </div>
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 font-mono text-[11px] text-slate-800 leading-relaxed">
-                  VITE_APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbx.../exec"<br />
-                  VITE_RENDER_SERVICE_URL="https://java-runner-xxxx.onrender.com/execute"<br />
-                  VITE_API_SECRET="MY_SECURE_LAB_KEY_123"
+                  VITE_APPS_SCRIPT_URL=&quot;https://script.google.com/macros/s/AKfycbx.../exec&quot;<br />
+                  VITE_RENDER_SERVICE_URL=&quot;https://java-runner-xxxx.onrender.com/execute&quot;<br />
+                  VITE_API_SECRET=&quot;MY_SECURE_LAB_KEY_123&quot;
                 </div>
               </section>
 
@@ -221,49 +237,48 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                     <div className="font-bold text-indigo-700 flex items-center gap-1.5">
                       <BookOpen className="w-4 h-4 text-indigo-600" />
-                      <span>1. Lab Exercises &amp; Schedules</span>
+                      <span>1. Question Bank (LAB &amp; ESE)</span>
                     </div>
                     <ul className="text-xs list-disc list-inside space-y-1 text-slate-700">
-                      <li><strong>Problem Specification:</strong> Set Title, Description, Category, and Difficulty.</li>
-                      <li><strong>Access Windows:</strong> Gated by start and end datetime-local timestamps.</li>
-                      <li><strong>Public Test Case:</strong> Sample input &amp; expected output available to students for sandbox debugging.</li>
-                      <li><strong>Hidden Private Test Case:</strong> Evaluated only on final submission to prevent hardcoded answers.</li>
+                      <li><strong>Assessment Type Tagging:</strong> Tag each question as <strong>LAB</strong> (Lab Exercise) or <strong>ESE</strong> (End Semester Practical).</li>
+                      <li><strong>Access Windows &amp; Starter Code:</strong> Gate availability via Open/Close timestamps and optionally preload starter Java templates.</li>
+                      <li><strong>Public &amp; Hidden Test Cases:</strong> Public input/output lets students test; Hidden private test cases prevent hardcoded outputs.</li>
+                    </ul>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                    <div className="font-bold text-violet-700 flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-violet-600" />
+                      <span>2. Dynamic Rubrics &amp; Lab Record Approval</span>
+                    </div>
+                    <ul className="text-xs list-disc list-inside space-y-1 text-slate-700">
+                      <li><strong>Configure Rubrics (LAB &amp; ESE):</strong> Customize rubric criterion labels, max marks, and auto-scoring rules (saved to <code className="font-mono">RubricTemplates</code>; e.g., 10 Marks for LAB, 50 Marks for ESE).</li>
+                      <li><strong>Evaluate &amp; Approve Records:</strong> Grade manually or run <strong>Auto-Evaluate Pending</strong>. Approving a student&apos;s Lab Record unlocks PDF download on their portal.</li>
+                      <li><strong>Lab Record Preview &amp; Print:</strong> Inspect clean A4 Lab Record pages (Title Page, Bonafide, INDEX with blank <em>Faculty Sign</em> column for hard-copy signing, and formatted Experiment outputs).</li>
                     </ul>
                   </div>
 
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                     <div className="font-bold text-emerald-700 flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>2. Submissions Hub &amp; Code Audit</span>
+                      <span>3. Submissions Hub &amp; Code Audit</span>
                     </div>
                     <ul className="text-xs list-disc list-inside space-y-1 text-slate-700">
-                      <li><strong>Code Viewer:</strong> Inspect exact student Java source files and console execution logs.</li>
-                      <li><strong>Re-Run Sandbox Test:</strong> Re-evaluate student submissions on-demand.</li>
-                      <li><strong>Automated Grading:</strong> 100/100 (All Pass), 50/100 (Partial Pass), or 0/100 (Failed).</li>
+                      <li><strong>Code &amp; Log Viewer:</strong> Inspect submitted Java source code alongside public and hidden test execution results.</li>
+                      <li><strong>Re-Run Sandbox Test:</strong> Re-verify student submissions against test cases on demand.</li>
+                      <li><strong>Automated Scoring:</strong> 100/100 (All Pass), 50/100 (Partial Pass), or 0/100 (Failed / Compile Error / Timeout).</li>
                     </ul>
                   </div>
 
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                     <div className="font-bold text-rose-700 flex items-center gap-1.5">
                       <ShieldAlert className="w-4 h-4 text-rose-600" />
-                      <span>3. Anti-Cheating &amp; Proctoring Monitor</span>
+                      <span>4. Anti-Cheating, Proxy Audit &amp; Student Roster</span>
                     </div>
                     <ul className="text-xs list-disc list-inside space-y-1 text-slate-700">
-                      <li><strong>Fullscreen Exits:</strong> Logs every time a student escapes fullscreen mode.</li>
-                      <li><strong>Paste Interceptions:</strong> Intercepts and logs clipboard pasting into the editor.</li>
-                      <li><strong>Multi-Student Proxy Audit:</strong> Flags devices or Google accounts shared across multiple Registration Numbers.</li>
-                      <li><strong>Automated Audit Flags:</strong> Highlights candidates with 2 or more infractions.</li>
-                    </ul>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                    <div className="font-bold text-amber-700 flex items-center gap-1.5">
-                      <Users className="w-4 h-4 text-amber-600" />
-                      <span>4. Student Enrollment Roster</span>
-                    </div>
-                    <ul className="text-xs list-disc list-inside space-y-1 text-slate-700">
-                      <li>Enroll candidates with Institutional Email (<code>@student.hindustanuniv.ac.in</code>) and Reg No.</li>
-                      <li>Real-time counter of total submissions and accumulated proctoring flags.</li>
+                      <li><strong>Fullscreen &amp; Paste Monitoring:</strong> Logs fullscreen exits and blocked clipboard paste events per student.</li>
+                      <li><strong>Multi-Student Proxy Detection:</strong> Audits Device IDs and captured Google accounts (<code className="font-mono">LoginAudit</code>) and flags shared devices across multiple RegNos.</li>
+                      <li><strong>Roster Management:</strong> Enroll or bulk-import students into the <code className="font-mono">Students</code> sheet for live sign-in verification.</li>
                     </ul>
                   </div>
                 </div>
@@ -273,15 +288,14 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
               <section className="space-y-3">
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-1 print:text-black print:border-black">
                   <span className="w-6 h-6 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold print:border print:border-black">3</span>
-                  Official Assessment Results Exports
+                  Official Assessment Results &amp; Dynamic Marksheet Exports
                 </h2>
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs text-slate-700">
-                  <p>Click <strong>Export Results</strong> in the dashboard banner or Submissions Hub to download:</p>
+                  <p>Export marksheets separately for <strong>LAB</strong> and <strong>ESE</strong> from <strong>Rubric Evaluations &amp; Records</strong> or <strong>Export Results</strong>:</p>
                   <ul className="list-disc list-inside space-y-1">
-                    <li><strong>Consolidated Student Marksheet (CSV):</strong> Aggregated per student with Reg No, Name, per-exercise best scores, total marks, percentage, and integrity remarks (formatted with UTF-8 BOM for Microsoft Excel).</li>
-                    <li><strong>Detailed Submissions Log (CSV):</strong> Complete audit trail of all test executions.</li>
-                    <li><strong>Proctoring Violations Audit (CSV):</strong> Chronological log of fullscreen exits, blurs, and paste attempts.</li>
-                    <li><strong>Complete Assessment Archive (JSON):</strong> Full programmatic backup.</li>
+                    <li><strong>Dynamic LAB / ESE Marksheet (CSV):</strong> Exports per-criterion marks matching your active rubric template, totals, faculty remarks, and integrity status (UTF-8 BOM for Microsoft Excel).</li>
+                    <li><strong>Consolidated Coding Score Marksheet (CSV):</strong> Aggregated per student with Reg No, Name, per-exercise best scores, total marks, and percentage.</li>
+                    <li><strong>Detailed Submissions &amp; Violations Audit (CSV / JSON):</strong> Complete chronological audit trail of test runs, device login audits, and proctoring incidents.</li>
                   </ul>
                 </div>
               </section>
@@ -302,7 +316,7 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
                       JavaLabPro: Student Examination &amp; Online IDE Manual
                     </h1>
                     <p className="text-slate-500 text-xs mt-1 print:text-gray-700">
-                      Standard Guidelines for Coding, Testing, Anti-Cheating Compliance, and Practical Lab Records
+                      Guidelines for Program Toggling, Draft Auto-Saving, Error Debugging, Proctoring Compliance &amp; Official Lab Records
                     </p>
                   </div>
                   <div className="text-right hidden sm:block">
@@ -321,28 +335,21 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
                 </h2>
                 <div className="space-y-3">
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="font-bold text-slate-900 text-xs">Step 1: Access Your Student Workspace</div>
+                    <div className="font-bold text-slate-900 text-xs">Step 1: Sign In &amp; Verify Credentials</div>
                     <p className="text-xs text-slate-700 mt-1">
-                      Navigate to the direct student URL provided by your faculty (<code className="text-emerald-700 bg-slate-100 px-1 py-0.5 rounded">/#/student</code>).
+                      Open <code className="text-emerald-700 bg-slate-100 px-1 py-0.5 rounded">/#/student</code> and enter your Official University Email (<code className="font-mono">@student.hindustanuniv.ac.in</code>) and Registration Number. Credentials are validated live against the <code className="font-mono">Students</code> sheet. Your portal automatically shows <strong>Lab Exercises</strong> during regular labs or <strong>ESE Practical</strong> questions when Faculty enables ESE Exam Mode.
                     </p>
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="font-bold text-slate-900 text-xs">Step 2: Verify Your Details</div>
+                    <div className="font-bold text-slate-900 text-xs">Step 2: Toggle Between Programs, Auto-Save &amp; Save Draft</div>
                     <p className="text-xs text-slate-700 mt-1">
-                      Click the profile badge in the top right corner. Enter your institutional email (<code>@student.hindustanuniv.ac.in</code>) and your Registration Number (e.g. <code>21BCE0450</code>). Click <strong>Verify Details</strong> to authenticate your session.
+                      Select any question from the <strong>Scheduled Questions</strong> panel, the <strong>Program</strong> dropdown, or the <strong>Prev / Next</strong> buttons above the editor. Your code and test outputs are <strong>auto-saved per program</strong> in your browser, and you can click <strong>Save Draft</strong> anytime (showing a <code className="font-mono">SAVED</code> badge) so you can move between questions without losing incomplete code. Use two-click <strong>Reset</strong> (<em>Confirm Reset?</em>) only when you want to restore starter boilerplate.
                     </p>
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="font-bold text-slate-900 text-xs">Step 3: Select Scheduled Exercise</div>
-                    <p className="text-xs text-slate-700 mt-1">
-                      Select the scheduled exercise from the left sidebar. Read the problem specification, time constraints, and sample public test case.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="font-bold text-slate-900 text-xs">Step 4: Write Java 17 Code</div>
+                    <div className="font-bold text-slate-900 text-xs">Step 3: Write Java 17 Code</div>
                     <p className="text-xs text-slate-700 mt-1">
                       Implement your solution in <code>Main.java</code> using standard Java structures:
                     </p>
@@ -358,16 +365,16 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="font-bold text-slate-900 text-xs">Step 5: Run Public Tests &amp; Custom Input</div>
+                    <div className="font-bold text-slate-900 text-xs">Step 4: Run Public Tests, Debug Compilation Errors &amp; Custom Input</div>
                     <p className="text-xs text-slate-700 mt-1">
-                      Click <strong>Run Public Tests</strong> to check against the sample test case. Toggle <strong>Custom Input: ON</strong> to test with your own input values.
+                      Click <strong>Run Public Tests</strong> to check against the sample case, or toggle <strong>Custom Input: ON</strong> to test your own input values. If there is a syntax/compilation error, runtime exception, or timeout, the exact error message appears with an <strong>ERROR</strong> / <strong>TIMEOUT</strong> badge inside <strong>Test Cases Evaluation</strong> and <strong>Execution Console</strong> alongside formatted <strong>Expected Output</strong> vs <strong>Your Output</strong>.
                     </p>
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="font-bold text-slate-900 text-xs">Step 6: Official Submit for Evaluation</div>
+                    <div className="font-bold text-slate-900 text-xs">Step 5: Official Submit for Evaluation</div>
                     <p className="text-xs text-slate-700 mt-1">
-                      Click <strong>Submit Code</strong>. Your code is evaluated against both the Public test case and the Hidden test case. A grade is computed and logged to the official database.
+                      Click <strong>Submit Code</strong> to evaluate both Public and Hidden test cases and record your official score (100 for all passed, 50 for partial pass, 0 for failed/error).
                     </p>
                   </div>
                 </div>
@@ -386,6 +393,7 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
                   <ul className="list-disc list-inside space-y-1.5">
                     <li><strong className="text-slate-900">Fullscreen Lock:</strong> Maintain fullscreen mode throughout the test. Minimizing or escaping triggers a violation flag.</li>
                     <li><strong className="text-slate-900">Clipboard Paste Block:</strong> Copy-pasting code into the editor is strictly blocked. All code must be typed directly.</li>
+                    <li><strong className="text-slate-900">One Student Per Device:</strong> Do not sign in with multiple Registration Numbers on the same browser/device during assessments.</li>
                   </ul>
                 </div>
               </section>
@@ -394,18 +402,17 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
               <section className="space-y-3">
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-1 print:text-black print:border-black">
                   <span className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold print:border print:border-black">3</span>
-                  Printing Your Practical Lab Record (PDF)
+                  Generating &amp; Submitting Your Official Lab Record (PDF)
                 </h2>
                 <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-2 text-xs text-emerald-950">
-                  <p className="font-semibold">
-                    Click <strong>Generate Lab Record (PDF)</strong> in the top action bar anytime to generate your complete laboratory practical record book:
+                  <p className="font-semibold flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-emerald-700" />
+                    <span>Available during Regular Lab Mode via <strong>Generate Lab Record (PDF)</strong>:</span>
                   </p>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li><strong>Page 1: Title Page:</strong> Formal typography for HINDUSTAN INSTITUTE OF TECHNOLOGY &amp; SCIENCE, Subject Code (BCB52003), your Name, Reg No, and an empty space where you can add/paste your logo.</li>
-                    <li><strong>Page 2: Bonafide Certificate:</strong> Official certificate of completion for MCA Computer Applications degree with examiner signature lines.</li>
-                    <li><strong>Page 3: Formatted Index:</strong> Full table of contents with S.No, Date, Program Title, and clean empty Rubrics columns for faculty marking.</li>
-                    <li><strong>Pages 4+: Experiment Sheets:</strong> Formatted aim, interactive editable procedure textarea for your program, Java code, execution test output, and staff signature block.</li>
-                    <li><strong>Print &amp; Save as PDF:</strong> Formatted for standard A4 portrait pages with clean page breaks.</li>
+                  <ul className="list-disc list-inside space-y-1.5">
+                    <li><strong>Section 1 — Preview, Download &amp; Upload Logo:</strong> Click <strong>Download Official Logo</strong> to save <code className="font-mono">HITS_LOGO_2025.jpg</code>, then upload it using <strong>Upload Hindustan Logo</strong> (or click the logo space on Page 1). Edit your Procedure/Algorithm steps if needed and verify your formatted program outputs.</li>
+                    <li><strong>Section 2 — Submit Record to Faculty:</strong> Confirm your Name and Registration Number and click <strong>Submit Record to Faculty</strong> for rubric evaluation.</li>
+                    <li><strong>Section 3 — Download &amp; Print Official PDF:</strong> Once Faculty approves your record, PDF export unlocks automatically. Clicking <strong>Download / Print Official PDF</strong> outputs A4 pages starting cleanly at <strong>Page 1 (Title Page)</strong>, <strong>Page 2 (Bonafide Certificate)</strong>, <strong>Page 3 (INDEX Table with blank Faculty Sign column for hard-copy signing)</strong>, and <strong>Pages 4+ (Experiment Sheets)</strong>.</li>
                   </ul>
                 </div>
               </section>
@@ -425,6 +432,8 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
+

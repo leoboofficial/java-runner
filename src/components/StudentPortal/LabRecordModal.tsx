@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Exercise, Submission, User, StudentLabRecordSubmission, Violation } from '../../types';
 import { getOrCreateDeviceId, getSavedPersonalEmail } from '../../utils/deviceAudit';
 import {
@@ -6,7 +7,6 @@ import {
   Printer,
   FileText,
   Settings2,
-  ExternalLink,
   RotateCcw,
   Upload,
   Trash2,
@@ -104,6 +104,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      document.body.classList.add('lab-record-print-active');
       setStudentName(currentUser.name || '');
       setRegNo(currentUser.regNo || '');
       setSubmitErrorMsg(null);
@@ -114,7 +115,12 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
       } else {
         setActiveSection('preview');
       }
+    } else {
+      document.body.classList.remove('lab-record-print-active');
     }
+    return () => {
+      document.body.classList.remove('lab-record-print-active');
+    };
   }, [isOpen, isApproved, isPending, currentUser.name, currentUser.regNo]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -249,17 +255,17 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
     const isPassed = bestSub !== null && bestSub.score === 100;
     const score = bestSub ? bestSub.score : 0;
 
-    const rawDate = bestSub?.timestamp || ex.openTime || new Date().toISOString();
-    let formattedDate = '';
-    try {
-      formattedDate = new Date(rawDate).toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
-    } catch {
-      formattedDate = new Date().toLocaleDateString('en-GB');
-    }
+    const parseValidDate = (val?: string): Date | null => {
+      if (!val) return null;
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? null : d;
+    };
+    const validDate = parseValidDate(bestSub?.timestamp) || parseValidDate(ex.openTime) || new Date();
+    const formattedDate = validDate.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
 
     const sourceCode =
       bestSub?.code ||
@@ -321,68 +327,11 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
       ? completedOnlyRecords.map((item, idx) => ({ ...item, index: idx + 1, pageNo: 4 + idx }))
       : allExerciseRecords;
 
-  // Reliable Multi-Strategy Print Handler
   const handlePrint = () => {
-    try {
-      window.print();
-    } catch (err) {
-      console.warn('Direct window.print() failed, falling back to isolated frame:', err);
-      printViaIframe();
-    }
+    window.print();
   };
 
-  const printViaIframe = () => {
-    const printableElement = document.getElementById('printable-record-book');
-    if (!printableElement) return;
-
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow?.document;
-    if (!doc) return;
-
-    doc.open();
-    doc.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${courseCode} Practical Report - ${studentName || 'Student'}</title>
-          <style>
-            @page { size: A4 portrait; margin: 12mm 15mm 15mm 15mm; }
-            body { background: white; color: black; font-family: "Times New Roman", Times, serif; margin: 0; padding: 0; }
-            .break-after-page { page-break-after: always; break-after: page; }
-            .print\\:hidden { display: none !important; }
-            pre { white-space: pre-wrap; font-family: monospace; font-size: 11px; }
-            img { max-width: 100%; max-height: 115px; height: auto; object-fit: contain; display: block; margin: 0 auto; }
-            table { width: 100%; border-collapse: collapse; border: 1px solid black; }
-            th, td { border: 1px solid black; padding: 6px; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          ${printableElement.innerHTML}
-        </body>
-      </html>
-    `);
-    doc.close();
-
-    setTimeout(() => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-      setTimeout(() => {
-        try {
-          document.body.removeChild(iframe);
-        } catch (e) {}
-      }, 2000);
-    }, 400);
-  };
-
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 print:p-0 print:bg-white print:static print:z-auto print-modal-container">
       <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-5xl h-[95vh] flex flex-col shadow-2xl overflow-hidden print:w-full print:h-auto print:border-none print:shadow-none print:rounded-none text-slate-900">
         
@@ -409,22 +358,13 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
 
           <div className="flex items-center gap-2">
             {isFacultyPreview && (
-              <>
-                <button
-                  onClick={printViaIframe}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 border border-slate-300 transition shadow-xs"
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Print via Frame</span>
-                </button>
-                <button
-                  onClick={handlePrint}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Print / Save as PDF</span>
-                </button>
-              </>
+              <button
+                onClick={handlePrint}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print / Save as PDF</span>
+              </button>
             )}
 
             <button
@@ -740,14 +680,6 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={printViaIframe}
-                className="px-3.5 py-2 rounded-xl bg-white hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 border border-emerald-300 transition shadow-xs"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Print via Frame</span>
-              </button>
-              <button
-                type="button"
                 onClick={handlePrint}
                 className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition"
               >
@@ -974,7 +906,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
             {/* ======================================================== */}
             {/*                   PAGE 1: TITLE PAGE                     */}
             {/* ======================================================== */}
-            <div className="min-h-[297mm] p-12 sm:p-16 flex flex-col justify-between text-center relative print:p-14 print:min-h-screen break-after-page" style={{ pageBreakAfter: 'always' }}>
+            <div className="min-h-[297mm] p-12 sm:p-16 flex flex-col justify-between text-center relative print:p-6 print:min-h-[264mm] break-after-page" style={{ pageBreakAfter: 'always' }}>
               {/* Institution Header: Banner Logo OR Emblem + Text */}
               {customLogoUrl && isWideBannerLogo ? (
                 <div className="pt-4 flex flex-col items-center justify-center">
@@ -1106,7 +1038,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
             {/* ======================================================== */}
             {/*              PAGE 2: BONAFIDE CERTIFICATE                */}
             {/* ======================================================== */}
-            <div className="min-h-[297mm] p-12 sm:p-16 flex flex-col justify-between text-left relative print:p-14 print:min-h-screen break-after-page border-t border-slate-200 print:border-none" style={{ pageBreakAfter: 'always' }}>
+            <div className="min-h-[297mm] p-12 sm:p-16 flex flex-col justify-between text-left relative print:p-6 print:min-h-[264mm] break-after-page border-t border-slate-200 print:border-none" style={{ pageBreakAfter: 'always' }}>
               <div className="space-y-12 pt-6">
                 {/* Certificate Heading */}
                 <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 pb-2 print:text-black">
@@ -1167,7 +1099,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
             {/* ======================================================== */}
             {/*                   PAGE 3: INDEX TABLE                    */}
             {/* ======================================================== */}
-            <div className="min-h-[297mm] p-10 sm:p-14 flex flex-col justify-start relative print:p-10 print:min-h-screen break-after-page border-t border-slate-200 print:border-none" style={{ pageBreakAfter: 'always' }}>
+            <div className="min-h-[297mm] p-10 sm:p-14 flex flex-col justify-start relative print:p-4 print:min-h-[264mm] break-after-page border-t border-slate-200 print:border-none" style={{ pageBreakAfter: 'always' }}>
               <h2 className="text-xl sm:text-2xl font-bold text-center text-slate-900 tracking-wider mb-6 print:text-black" style={{ fontFamily: 'Inter, sans-serif' }}>
                 INDEX
               </h2>
@@ -1279,8 +1211,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
             {exerciseRecords.length === 0 ? (
               /* Single blank template page if no exercises scheduled yet */
               <div
-                className="min-h-[297mm] p-10 sm:p-14 flex flex-col justify-between text-left relative print:p-10 print:min-h-screen break-after-page border-t border-slate-200 print:border-none"
-                style={{ pageBreakAfter: 'always' }}
+                className="min-h-[297mm] p-10 sm:p-14 flex flex-col justify-between text-left relative print:p-4 print:min-h-[264mm] border-t border-slate-200 print:border-none"
               >
                 <div className="space-y-6">
                   <div className="flex items-center justify-between border-b border-slate-900 pb-2 text-xs font-bold print:border-black">
@@ -1344,13 +1275,15 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
                 </div>
               </div>
             ) : (
-              exerciseRecords.map((item) => (
+              exerciseRecords.map((item, idx) => {
+                const isLastExperiment = idx === exerciseRecords.length - 1;
+                return (
                 <div
                   key={item.id}
-                  className="min-h-[297mm] p-10 sm:p-14 flex flex-col justify-between text-left relative print:p-10 print:min-h-screen break-after-page border-t border-slate-200 print:border-none"
-                  style={{ pageBreakAfter: 'always' }}
+                  className={`min-h-[297mm] p-10 sm:p-14 flex flex-col justify-between text-left relative print:p-3 print:min-h-[262mm] border-t border-slate-200 print:border-none ${isLastExperiment ? '' : 'break-after-page'}`}
+                  style={isLastExperiment ? undefined : { pageBreakAfter: 'always' }}
                 >
-                  <div className="space-y-5">
+                  <div className="space-y-4 print:space-y-3">
                     {/* Experiment Top Bar */}
                     <div className="flex items-center justify-between border-b border-slate-900 pb-2 text-xs font-bold print:border-black">
                       <span>Date: {item.date}</span>
@@ -1447,7 +1380,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
                   </div>
 
                   {/* Bottom Signature Line */}
-                  <div className="pt-6 flex items-center justify-between text-xs font-bold print:text-black">
+                  <div className="pt-4 flex items-center justify-between text-xs font-bold print:text-black">
                     <div>Page {item.pageNo}</div>
                     <div className="text-right">
                       <span className="inline-block w-40 border-b border-slate-900 mr-2 print:border-black"></span>
@@ -1455,7 +1388,8 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
                     </div>
                   </div>
                 </div>
-              ))
+              );
+              })
             )}
           </div>
           )}
@@ -1476,6 +1410,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

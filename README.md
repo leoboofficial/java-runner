@@ -127,12 +127,16 @@ The application enforces strict route isolation through client-side hash routing
      2. **Registration Number** (e.g., `2411001`)
    - Behind the scenes (with zero student-facing telemetry UI), the browser attaches a persistent **Device ID** (`DEV-XXXXXX-XXXX`), and if `VITE_GOOGLE_CLIENT_ID` is configured, prompts Google's account selector to automatically capture the verified Gmail signed in on the student's device without letting students manually type a fake email.
    - Google Apps Script verifies the Official Email & RegNo against the `Students` sheet and logs the event into the `LoginAudit` sheet, flagging if the same Device ID or verified Gmail was used for another Registration Number.
-2. **Exercise Selection & Coding in Java 17**:
+2. **Exercise Selection, Program Toggling & Auto-Save in Java 17**:
    - Active exercises whose window covers the current time load into the editor with their starter code.
-   - Students can test with **Custom Input: ON** or **Run Public Tests**, then click **Submit Code**.
+   - Students can switch freely between programs using the **Scheduled Questions** sidebar, the **Program** selector dropdown, or **Prev / Next** toggle buttons (`Q1 / N`).
+   - Code and test results are **auto-saved per student & exercise** in `localStorage`, alongside an explicit **Save Draft** button with a saved timestamp and `SAVED` / `PASS` question badges so incomplete or failing programs are preserved when toggling between questions.
+   - Clicking **Run Public Tests** (or **Custom Input: ON**) displays formatted multiline `Expected Output` vs `Your Output`, and surfaces exact compiler/syntax errors, runtime exceptions, and timeouts (`ERROR` / `TIMEOUT` badges) directly inside **Test Cases Evaluation** and **Execution Console**.
+   - Clicking **Submit Code** evaluates both public and hidden test cases.
 3. **Grading Matrix**:
    - Both Passed: **100 / 100** (`ALL TEST CASES PASSED`)
    - One Passed: **50 / 100** (`PARTIAL PASS`)
+   - Time Limit Exceeded: **0 / 100** (`TIME LIMIT EXCEEDED`)
    - None Passed / Compile Error: **0 / 100** (`FAILED` / `COMPILATION ERROR`)
    - Submissions and any proctoring violations sync silently to Google Sheets (`Submissions` & `Violations` tabs) along with any captured `Recorded Mail ID`, `Device ID`, and `Multi-Student Flag` for faculty review.
 
@@ -164,7 +168,14 @@ The platform utilizes a **Dual-Engine Execution Pipeline**:
 
 ### F. Practical Lab Record (PDF) Generation Flow
 
-Students can click **Generate Lab Record (PDF)** to compile Title Page, Bonafide Certificate, 10-Mark Rubrics INDEX Table, and individual experiment pages with editable Procedures, Source Code, and Execution Outputs, and submit the record for Faculty Rubric Evaluation (`Evaluations` sheet).
+During regular Lab Mode, students click **Generate Lab Record (PDF)** and follow the 3-section workflow:
+1. **Section 1 — Preview & Download/Upload Official Logo**:
+   - Click **Download Official Logo** (`HITS_LOGO_2025.jpg`) to download the official university banner logo, then click **Upload Hindustan Logo** to embed it cleanly into Page 1 (automatically scaling wide banner logos across the header without duplicating university title text).
+   - Preview all A4 pages (**Page 1: Title Page**, **Page 2: Bonafide Certificate**, **Page 3: INDEX Table** with blank `Faculty Sign` cells for hard-copy signing, and **Pages 4+: Experiment Sheets** with editable Procedures, Source Code, and formatted `Input` / `Output Result` / `Evaluation Status` blocks).
+2. **Section 2 — Submit Record to Faculty**:
+   - Confirm Name and Registration Number and submit the Lab Record to the Google Sheet (`Evaluations` tab) for Faculty rubric grading.
+3. **Section 3 — Download & Print Official PDF**:
+   - Unlocks automatically once Faculty approves the evaluation. Clicking **Download / Print Official PDF** (or **Print / Save as PDF** in the Faculty inspection modal) exports only the Lab Record A4 pages starting directly at **Page 1 (Title Page)** without capturing the portal UI.
 
 ---
 
@@ -398,6 +409,7 @@ You can import the ready-made 10-tab Excel workbook **`/public/JavaLabPro_Databa
 │   ├── Evaluations_Template.csv
 │   ├── ExamConfig_Template.csv
 │   ├── RubricTemplates_Template.csv
+│   ├── assets/aistudio/HITS_LOGO_2025_47293b08.jpg # Official downloadable HITS logo
 │   └── hits_logo.svg
 ├── src/
 │   ├── components/
