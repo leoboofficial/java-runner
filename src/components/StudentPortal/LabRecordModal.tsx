@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   ImagePlus,
   Loader2,
+  Download,
 } from 'lucide-react';
 
 interface LabRecordModalProps {
@@ -62,6 +63,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
   const [examDate, setExamDate] = useState('');
 
   const HITS_LOGO_STORAGE_KEY = 'javalab_pro_hits_logo';
+  const OFFICIAL_HITS_LOGO_PATH = './assets/aistudio/HITS_LOGO_2025_47293b08.jpg';
 
   // Student's custom Hindustan logo (persisted locally so it remains after faculty approval)
   const [customLogoUrl, setCustomLogoUrl] = useState<string | null>(() => {
@@ -71,6 +73,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
       return null;
     }
   });
+  const [isWideBannerLogo, setIsWideBannerLogo] = useState(false);
 
   const [showConfigDrawer, setShowConfigDrawer] = useState(false);
 
@@ -120,6 +123,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
+        setIsWideBannerLogo(false);
         setCustomLogoUrl(result);
         try {
           localStorage.setItem(HITS_LOGO_STORAGE_KEY, result);
@@ -131,6 +135,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
 
   const handleClearLogo = () => {
     setCustomLogoUrl(null);
+    setIsWideBannerLogo(false);
     try {
       localStorage.removeItem(HITS_LOGO_STORAGE_KEY);
     } catch {}
@@ -261,9 +266,36 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
       ex.starterCode ||
       `import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Program implementation for: ${ex.title}\n        System.out.println("${ex.publicOutput.replace(/\n/g, ' ')}");\n    }\n}`;
 
-    const outputResult =
-      bestSub?.publicLog ||
-      `Input:\n${ex.publicInput}\n\nOutput Result:\n${ex.publicOutput}\n\nEvaluation Status: [TEST PASSED 100%]`;
+    const formatOutputResult = (): string => {
+      if (!bestSub) {
+        return `Input:\n${ex.publicInput}\n\nOutput Result:\n${ex.publicOutput}\n\nEvaluation Status: [TEST PASSED 100%]`;
+      }
+
+      const rawLog = (bestSub.publicLog || '').trim();
+      const isPublicPassed =
+        bestSub.publicPassed || /^PASSED(\s*\(.*\))?$/i.test(rawLog);
+
+      if (isPublicPassed) {
+        const statusLabel =
+          bestSub.score === 100
+            ? 'TEST PASSED 100%'
+            : `${bestSub.status || 'PARTIAL PASS'} (${bestSub.score}%)`;
+        return `Input:\n${ex.publicInput}\n\nOutput Result:\n${ex.publicOutput}\n\nEvaluation Status: [${statusLabel}]`;
+      }
+
+      if (rawLog.includes('Got:\n')) {
+        const gotPart = rawLog.split('Got:\n')[1]?.trim() || '(No output printed)';
+        return `Input:\n${ex.publicInput}\n\nOutput Result:\n${gotPart}\n\nEvaluation Status: [${bestSub.status || 'FAILED'} (${bestSub.score}%)]`;
+      }
+
+      if (!rawLog) {
+        return `Input:\n${ex.publicInput}\n\nOutput Result:\n${ex.publicOutput}\n\nEvaluation Status: [${bestSub.status || 'SUBMITTED'} (${bestSub.score}%)]`;
+      }
+
+      return `Input:\n${ex.publicInput}\n\nOutput Result:\n${rawLog}\n\nEvaluation Status: [${bestSub.status || 'ERROR'}]`;
+    };
+
+    const outputResult = formatOutputResult();
 
     return {
       index: index + 1,
@@ -327,6 +359,7 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
             .break-after-page { page-break-after: always; break-after: page; }
             .print\\:hidden { display: none !important; }
             pre { white-space: pre-wrap; font-family: monospace; font-size: 11px; }
+            img { max-width: 100%; max-height: 115px; height: auto; object-fit: contain; display: block; margin: 0 auto; }
             table { width: 100%; border-collapse: collapse; border: 1px solid black; }
             th, td { border: 1px solid black; padding: 6px; font-size: 12px; }
           </style>
@@ -524,9 +557,17 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-bold text-slate-900">
-                    Step 1A: Upload Hindustan University Logo
+                    Step 1A: Download &amp; Upload Hindustan University Logo
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <a
+                      href={OFFICIAL_HITS_LOGO_PATH}
+                      download="HITS_LOGO_2025.jpg"
+                      className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-semibold flex items-center gap-1.5 transition"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>Download Official Logo</span>
+                    </a>
                     <label className="cursor-pointer px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold flex items-center gap-1.5 transition">
                       <Upload className="w-3 h-3" />
                       <span>{customLogoUrl ? 'Change Logo' : 'Upload Hindustan Logo'}</span>
@@ -934,58 +975,100 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
             {/*                   PAGE 1: TITLE PAGE                     */}
             {/* ======================================================== */}
             <div className="min-h-[297mm] p-12 sm:p-16 flex flex-col justify-between text-center relative print:p-14 print:min-h-screen break-after-page" style={{ pageBreakAfter: 'always' }}>
-              {/* Institution Header: Words with Empty Space for Student's Logo */}
-              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-6">
-                {/* Logo Space - Left blank or custom image added by student */}
-                <div className="relative group w-24 h-24 sm:w-28 sm:h-28 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center p-2 text-center shrink-0 print:border-dashed print:border-slate-300">
-                  {customLogoUrl ? (
-                    <>
-                      <img src={customLogoUrl} alt="Logo" className="w-full h-full object-contain" />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleClearLogo();
-                        }}
-                        className="absolute -top-2 -right-2 bg-rose-600 text-white rounded-full p-1 shadow-md hover:bg-rose-700 print:hidden"
-                        title="Remove logo (leave space empty)"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="space-y-1">
-                      <span className="text-[11px] font-bold text-slate-400 font-sans block leading-tight">
-                        [ Logo Space ]
-                      </span>
-                      <span className="text-[9px] text-slate-400 font-sans block print:hidden">
-                        Click to add logo or leave empty
-                      </span>
-                    </div>
-                  )}
-                  {/* Click to upload custom logo */}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    className="absolute inset-0 opacity-0 cursor-pointer print:hidden"
-                    title="Click to select your own logo image, or leave empty"
-                  />
+              {/* Institution Header: Banner Logo OR Emblem + Text */}
+              {customLogoUrl && isWideBannerLogo ? (
+                <div className="pt-4 flex flex-col items-center justify-center">
+                  <div className="relative group w-full max-w-[480px] flex items-center justify-center p-2 rounded-2xl">
+                    <img
+                      src={customLogoUrl}
+                      alt="Hindustan Institute of Technology and Science Logo"
+                      onLoad={(e) => {
+                        const img = e.currentTarget;
+                        setIsWideBannerLogo(img.naturalWidth / Math.max(1, img.naturalHeight) > 2.0);
+                      }}
+                      className="w-full h-auto max-h-28 object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClearLogo();
+                      }}
+                      className="absolute -top-2 -right-2 bg-rose-600 text-white rounded-full p-1 shadow-md hover:bg-rose-700 print:hidden"
+                      title="Remove logo (leave space empty)"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="absolute inset-0 opacity-0 cursor-pointer print:hidden"
+                      title="Click to change logo image"
+                    />
+                  </div>
                 </div>
+              ) : (
+                <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-6">
+                  {/* Logo Space - Left blank or custom image added by student */}
+                  <div className={`relative group ${customLogoUrl ? 'w-24 h-24 sm:w-28 sm:h-28 border-transparent' : 'w-24 h-24 sm:w-28 sm:h-28 border-2 border-dashed border-slate-300 print:border-dashed print:border-slate-300'} rounded-2xl flex flex-col items-center justify-center p-2 text-center shrink-0`}>
+                    {customLogoUrl ? (
+                      <>
+                        <img
+                          src={customLogoUrl}
+                          alt="Logo"
+                          onLoad={(e) => {
+                            const img = e.currentTarget;
+                            setIsWideBannerLogo(img.naturalWidth / Math.max(1, img.naturalHeight) > 2.0);
+                          }}
+                          className="w-full h-full object-contain"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleClearLogo();
+                          }}
+                          className="absolute -top-2 -right-2 bg-rose-600 text-white rounded-full p-1 shadow-md hover:bg-rose-700 print:hidden"
+                          title="Remove logo (leave space empty)"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </>
+                    ) : (
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-bold text-slate-400 font-sans block leading-tight">
+                          [ Logo Space ]
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-sans block print:hidden">
+                          Click to add logo or leave empty
+                        </span>
+                      </div>
+                    )}
+                    {/* Click to upload custom logo */}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="absolute inset-0 opacity-0 cursor-pointer print:hidden"
+                      title="Click to select your own logo image, or leave empty"
+                    />
+                  </div>
 
-                {/* Institution Name in Words */}
-                <div className="text-left font-sans select-none">
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 print:text-black tracking-wide leading-none">
-                    HINDUSTAN
-                  </h1>
-                  <p className="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 print:text-black tracking-[0.25em] sm:tracking-[0.28em] uppercase mt-2">
-                    INSTITUTE OF TECHNOLOGY &amp; SCIENCE
-                  </p>
-                  <p className="text-[10px] sm:text-xs md:text-sm font-bold text-slate-700 print:text-gray-800 tracking-[0.18em] sm:tracking-[0.2em] uppercase mt-1">
-                    (DEEMED TO BE UNIVERSITY)
-                  </p>
+                  {/* Institution Name in Words */}
+                  <div className="text-left font-sans select-none">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 print:text-black tracking-wide leading-none">
+                      HINDUSTAN
+                    </h1>
+                    <p className="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 print:text-black tracking-[0.25em] sm:tracking-[0.28em] uppercase mt-2">
+                      INSTITUTE OF TECHNOLOGY &amp; SCIENCE
+                    </p>
+                    <p className="text-[10px] sm:text-xs md:text-sm font-bold text-slate-700 print:text-gray-800 tracking-[0.18em] sm:tracking-[0.2em] uppercase mt-1">
+                      (DEEMED TO BE UNIVERSITY)
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Title & Subject */}
               <div className="space-y-6 my-auto py-10" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -1190,78 +1273,6 @@ export const LabRecordModal: React.FC<LabRecordModalProps> = ({
                 </table>
               </div>
 
-              {/* Continuous Assessment & Evaluation Rubric Endorsement Block */}
-              <div className="mt-8 border border-slate-900 p-5 rounded-lg bg-slate-50/50 print:bg-white print:border-black text-xs font-serif space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-900 pb-2">
-                  <span className="font-bold uppercase tracking-wider text-sm text-slate-900 print:text-black">
-                    Continuous Assessment &amp; 10-Mark Rubric Evaluation
-                  </span>
-                  <span className="font-mono text-xs font-bold text-indigo-900 print:text-black">
-                    {activeRubrics ? `Awarded: ${activeRubrics.total ?? activeRubrics.totalMarks} / 10 Marks` : 'Max Marks: 10'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                  <div className="border border-slate-900 p-2 rounded bg-white print:border-black">
-                    <div className="text-[10px] uppercase text-slate-600 font-sans print:text-black">1. Concept Implemented</div>
-                    <div className="text-sm font-bold font-mono mt-0.5 print:text-black">
-                      {activeRubrics ? `${activeRubrics.conceptImplemented} / 5` : '- / 5'}
-                    </div>
-                  </div>
-                  <div className="border border-slate-900 p-2 rounded bg-white print:border-black">
-                    <div className="text-[10px] uppercase text-slate-600 font-sans print:text-black">2. Naming Conventions</div>
-                    <div className="text-sm font-bold font-mono mt-0.5 print:text-black">
-                      {activeRubrics ? `${activeRubrics.namingConventions} / 1` : '- / 1'}
-                    </div>
-                  </div>
-                  <div className="border border-slate-900 p-2 rounded bg-white print:border-black">
-                    <div className="text-[10px] uppercase text-slate-600 font-sans print:text-black">3. Documentation</div>
-                    <div className="text-sm font-bold font-mono mt-0.5 print:text-black">
-                      {activeRubrics ? `${activeRubrics.documentation} / 1` : '- / 1'}
-                    </div>
-                  </div>
-                  <div className="border border-slate-900 p-2 rounded bg-white print:border-black">
-                    <div className="text-[10px] uppercase text-slate-600 font-sans print:text-black">4. Output Accuracy</div>
-                    <div className="text-sm font-bold font-mono mt-0.5 print:text-black">
-                      {activeRubrics ? `${activeRubrics.output} / 3` : '- / 3'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-900 print:border-black">
-                  <div>
-                    <div className="text-[11px] text-slate-800 print:text-black">
-                      Candidate Reg No: <strong className="font-mono">{regNo || currentUser.regNo}</strong> • Name: <strong>{studentName || currentUser.name}</strong>
-                    </div>
-                    <div className="text-[11px] text-slate-800 print:text-black mt-0.5">
-                      Official Email: <strong className="font-mono">{currentUser.email || evaluation?.studentEmail}</strong>
-                    </div>
-                    <div className="text-[10px] text-emerald-800 print:text-black mt-0.5 font-sans">
-                      {violations.length === 0
-                        ? '✓ Proctoring Guard Verified: 0 Cheating Flags'
-                        : `✓ Proctoring Audit: ${violations.length} Incident(s) Reviewed by Staff`}
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="font-bold text-slate-900 print:text-black">
-                      {isApproved ? 'Digitally Verified & Approved' : 'Staff Signature Required'}
-                    </div>
-                    <div className="text-xs text-slate-700 print:text-black font-semibold mt-0.5">
-                      {evaluation?.evaluatedBy || facultyName}
-                    </div>
-                    <div className="text-[10px] text-slate-500 print:text-black">
-                      {evaluation?.evaluatedAt ? new Date(evaluation.evaluatedAt).toLocaleDateString() : reportDate}
-                    </div>
-                  </div>
-                </div>
-
-                {evaluation?.facultyRemarks && (
-                  <div className="text-xs italic bg-white p-2.5 rounded border border-slate-400 print:border-black print:text-black">
-                    <strong>Faculty Assessment Remarks: </strong> {evaluation.facultyRemarks}
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* ======================================================== */}
