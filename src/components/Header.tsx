@@ -56,13 +56,11 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-lg text-slate-900 tracking-tight">
-                  JavaLab<span className="text-orange-500">Pro</span>
+                Object Oriented Programming Lab<span className="text-orange-500">   BCB52003</span>
                 </span>
-                <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                  JDK 17
-                </span>
+                
               </div>
-              <p className="text-xs text-slate-500 hidden sm:block font-medium">BCB52003 - Object Oriented Programming Lab</p>
+              
             </div>
           </div>
 
