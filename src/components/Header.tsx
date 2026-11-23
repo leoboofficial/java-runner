@@ -70,8 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
               /* Student Portal - Strictly shows Student Badge; Faculty & Coordinator controls hidden */
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700 shadow-xs">
-                  <Terminal className="w-4 h-4 text-emerald-600" />
-                  <span>JAVA LAB Workspace</span>
+                  
                 </div>
                 {isVerified && currentUser.role === 'FACULTY' && (
                   <button
