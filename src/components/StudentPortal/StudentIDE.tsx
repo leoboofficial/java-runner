@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Exercise, Submission, Violation, User, SystemSettings, ExecutionResult } from '../../types';
 import {
   Play,
@@ -14,6 +14,10 @@ import {
   Terminal,
   FileCode,
   Eye,
+  Save,
+  Check,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { JavaRunnerService } from '../../services/javaRunner';
 import { getOrCreateDeviceId, getSavedPersonalEmail } from '../../utils/deviceAudit';
@@ -25,6 +29,19 @@ interface StudentIDEProps {
   settings: SystemSettings;
   preselectedExerciseId?: string | null;
 }
+
+interface CachedExerciseResults {
+  publicTestResult: ExecutionResult | null;
+  privateTestResult: ExecutionResult | null;
+  officialStatus: string | null;
+  consoleOutput?: string;
+  consoleIsError?: boolean;
+}
+
+const DEFAULT_STARTER_CODE = `import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        \n    }\n}`;
+
+const getStarterCode = (ex?: Exercise): string =>
+  ex?.starterCode && ex.starterCode.trim().length > 0 ? ex.starterCode : DEFAULT_STARTER_CODE;
 
 export const StudentIDE: React.FC<StudentIDEProps> = ({
   currentUser,
@@ -40,14 +57,84 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
     return now >= open && now <= close;
   });
 
-  const [selectedEx, setSelectedEx] = useState<Exercise | undefined>(
-    activeExercises[0] || exercises[0]
-  );
+  const studentDraftPrefix = (currentUser.regNo || currentUser.email || 'guest')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '_');
 
-  const [code, setCode] = useState<string>(
-    selectedEx?.starterCode ||
-      `import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Write your solution here\n        \n    }\n}`
-  );
+  const getDraftStorageKey = (exId: string) => `javalab_draft_${studentDraftPrefix}_${exId}`;
+
+  const readStoredDraft = (exId: string): { code: string; savedAt: string } | null => {
+    try {
+      const raw = localStorage.getItem(getDraftStorageKey(exId));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.code === 'string') {
+        return { code: parsed.code, savedAt: parsed.savedAt || '' };
+      }
+    } catch {
+      // Ignore storage read errors
+    }
+    return null;
+  };
+
+  const writeStoredDraft = (exId: string, draftCode: string): string => {
+    const savedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    try {
+      localStorage.setItem(
+        getDraftStorageKey(exId),
+        JSON.stringify({ code: draftCode, savedAt })
+      );
+    } catch {
+      // Ignore storage quota errors
+    }
+    return savedAt;
+  };
+
+  const removeStoredDraft = (exId: string) => {
+    try {
+      localStorage.removeItem(getDraftStorageKey(exId));
+    } catch {
+      // Ignore storage errors
+    }
+  };
+
+  const initialEx =
+    (preselectedExerciseId && exercises.find((e) => e.id === preselectedExerciseId)) ||
+    activeExercises[0] ||
+    exercises[0];
+
+  const [selectedEx, setSelectedEx] = useState<Exercise | undefined>(initialEx);
+
+  const [draftsByEx, setDraftsByEx] = useState<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    exercises.forEach((ex) => {
+      const stored = readStoredDraft(ex.id);
+      if (stored) {
+        map[ex.id] = stored.code;
+      }
+    });
+    return map;
+  });
+
+  const [savedTimeByEx, setSavedTimeByEx] = useState<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    exercises.forEach((ex) => {
+      const stored = readStoredDraft(ex.id);
+      if (stored?.savedAt) {
+        map[ex.id] = stored.savedAt;
+      }
+    });
+    return map;
+  });
+
+  const [resultsByEx, setResultsByEx] = useState<Record<string, CachedExerciseResults>>({});
+
+  const [code, setCode] = useState<string>(() => {
+    if (!initialEx) return DEFAULT_STARTER_CODE;
+    const stored = readStoredDraft(initialEx.id);
+    return stored ? stored.code : getStarterCode(initialEx);
+  });
 
   const [isRunningPublic, setIsRunningPublic] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,13 +146,54 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
   const [useCustomInput, setUseCustomInput] = useState(false);
   const [customInputText, setCustomInputText] = useState('');
   const [customOutputText, setCustomOutputText] = useState('');
+  const [consoleIsError, setConsoleIsError] = useState(false);
+
+  const [justSaved, setJustSaved] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const [localViolations, setLocalViolations] = useState<Violation[]>([]);
   const [recentViolationWarning, setRecentViolationWarning] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Keep selectedEx in sync when exercises array updates with fresh data or switches LAB/ESE mode
+  const latestCodeRef = useRef(code);
+  latestCodeRef.current = code;
+  const selectedExRef = useRef(selectedEx);
+  selectedExRef.current = selectedEx;
+
+  // Hydrate drafts when exercises list changes and keep selectedEx valid
   useEffect(() => {
+    if (exercises.length === 0) return;
+
+    setDraftsByEx((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      exercises.forEach((ex) => {
+        if (next[ex.id] === undefined) {
+          const stored = readStoredDraft(ex.id);
+          if (stored) {
+            next[ex.id] = stored.code;
+            changed = true;
+          }
+        }
+      });
+      return changed ? next : prev;
+    });
+
+    setSavedTimeByEx((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      exercises.forEach((ex) => {
+        if (!next[ex.id]) {
+          const stored = readStoredDraft(ex.id);
+          if (stored?.savedAt) {
+            next[ex.id] = stored.savedAt;
+            changed = true;
+          }
+        }
+      });
+      return changed ? next : prev;
+    });
+
     if (selectedEx) {
       const fresh = exercises.find((e) => e.id === selectedEx.id);
       if (fresh) {
@@ -73,34 +201,87 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
           setSelectedEx(fresh);
         }
       } else {
-        setSelectedEx(activeExercises[0] || exercises[0]);
+        const fallback = activeExercises[0] || exercises[0];
+        if (fallback) handleSelectExercise(fallback);
       }
-    } else if (exercises.length > 0) {
-      setSelectedEx(activeExercises[0] || exercises[0]);
+    } else {
+      const fallback = activeExercises[0] || exercises[0];
+      if (fallback) handleSelectExercise(fallback);
     }
-  }, [exercises, selectedEx?.id]);
+  }, [exercises]);
 
-  useEffect(() => {
-    if (selectedEx) {
-      setCode(
-        selectedEx.starterCode && selectedEx.starterCode.trim().length > 0
-          ? selectedEx.starterCode
-          : `import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        \n    }\n}`
-      );
-      setPublicTestResult(null);
-      setPrivateTestResult(null);
-      setOfficialStatus(null);
-    }
-  }, [selectedEx?.id, selectedEx?.starterCode]);
-
+  // Switch exercise when parent preselects one
   useEffect(() => {
     if (preselectedExerciseId) {
       const found = exercises.find((e) => e.id === preselectedExerciseId);
-      if (found) {
-        setSelectedEx(found);
+      if (found && found.id !== selectedEx?.id) {
+        handleSelectExercise(found);
       }
     }
   }, [preselectedExerciseId, exercises]);
+
+  // Debounced auto-save whenever code changes for the current exercise
+  useEffect(() => {
+    if (!selectedEx) return;
+    const exId = selectedEx.id;
+    const starter = getStarterCode(selectedEx);
+    const hasExistingDraft = Boolean(savedTimeByEx[exId] || readStoredDraft(exId));
+
+    if (code === starter && !hasExistingDraft) return;
+
+    const timer = setTimeout(() => {
+      const savedAt = writeStoredDraft(exId, code);
+      setSavedTimeByEx((prev) => ({ ...prev, [exId]: savedAt }));
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [code, selectedEx?.id]);
+
+  // Helper to switch between programs cleanly without losing unsaved code or results
+  const handleSelectExercise = (targetEx: Exercise) => {
+    const current = selectedExRef.current;
+    if (current && current.id !== targetEx.id) {
+      const currentCode = latestCodeRef.current;
+      const starter = getStarterCode(current);
+      const hadDraft = Boolean(savedTimeByEx[current.id] || readStoredDraft(current.id));
+
+      setDraftsByEx((prev) => ({ ...prev, [current.id]: currentCode }));
+      if (currentCode !== starter || hadDraft) {
+        const savedAt = writeStoredDraft(current.id, currentCode);
+        setSavedTimeByEx((prev) => ({ ...prev, [current.id]: savedAt }));
+      }
+    }
+
+    const stored = readStoredDraft(targetEx.id);
+    const nextCode = draftsByEx[targetEx.id] ?? stored?.code ?? getStarterCode(targetEx);
+    const cachedResults = resultsByEx[targetEx.id];
+
+    setSelectedEx(targetEx);
+    setCode(nextCode);
+    setPublicTestResult(cachedResults?.publicTestResult ?? null);
+    setPrivateTestResult(cachedResults?.privateTestResult ?? null);
+    setOfficialStatus(cachedResults?.officialStatus ?? null);
+    setCustomOutputText(cachedResults?.consoleOutput ?? '');
+    setConsoleIsError(Boolean(cachedResults?.consoleIsError));
+    setConfirmReset(false);
+  };
+
+  const handleCodeChange = (newCode: string) => {
+    setCode(newCode);
+    if (selectedEx) {
+      setDraftsByEx((prev) => ({ ...prev, [selectedEx.id]: newCode }));
+    }
+  };
+
+  const handleManualSaveDraft = () => {
+    if (!selectedEx) return;
+    const exId = selectedEx.id;
+    const savedAt = writeStoredDraft(exId, code);
+    setDraftsByEx((prev) => ({ ...prev, [exId]: code }));
+    setSavedTimeByEx((prev) => ({ ...prev, [exId]: savedAt }));
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 1800);
+  };
 
   useEffect(() => {
     const recordViolation = (type: Violation['type'], details: string, severity: 'low' | 'medium' | 'high' = 'medium') => {
@@ -176,6 +357,11 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
   };
 
   const handleRunPublic = async () => {
+    if (selectedEx) {
+      const savedAt = writeStoredDraft(selectedEx.id, code);
+      setSavedTimeByEx((prev) => ({ ...prev, [selectedEx.id]: savedAt }));
+    }
+
     if (useCustomInput) {
       setIsRunningPublic(true);
       setActiveConsoleTab('output');
@@ -184,7 +370,21 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
         apiSecret: settings.apiSecret,
         forceBuiltin: settings.useBuiltinRunner,
       });
-      setCustomOutputText(res.actualOutput || res.log);
+      const outputMsg = res.isError ? res.log : res.actualOutput || res.log;
+      setCustomOutputText(outputMsg);
+      setConsoleIsError(Boolean(res.isError));
+      if (selectedEx) {
+        setResultsByEx((prev) => ({
+          ...prev,
+          [selectedEx.id]: {
+            publicTestResult: prev[selectedEx.id]?.publicTestResult ?? publicTestResult,
+            privateTestResult: prev[selectedEx.id]?.privateTestResult ?? privateTestResult,
+            officialStatus: prev[selectedEx.id]?.officialStatus ?? officialStatus,
+            consoleOutput: outputMsg,
+            consoleIsError: Boolean(res.isError),
+          },
+        }));
+      }
       setIsRunningPublic(false);
       return;
     }
@@ -201,12 +401,28 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
       apiSecret: settings.apiSecret,
       forceBuiltin: settings.useBuiltinRunner,
     });
+    const consoleMsg = result.isError ? result.log : result.actualOutput || result.log;
     setPublicTestResult(result);
+    setCustomOutputText(consoleMsg);
+    setConsoleIsError(Boolean(result.isError));
+    setResultsByEx((prev) => ({
+      ...prev,
+      [selectedEx.id]: {
+        publicTestResult: result,
+        privateTestResult: prev[selectedEx.id]?.privateTestResult ?? null,
+        officialStatus: prev[selectedEx.id]?.officialStatus ?? null,
+        consoleOutput: consoleMsg,
+        consoleIsError: Boolean(result.isError),
+      },
+    }));
     setIsRunningPublic(false);
   };
 
   const handleSubmitCode = async () => {
     if (!selectedEx) return;
+
+    const savedAt = writeStoredDraft(selectedEx.id, code);
+    setSavedTimeByEx((prev) => ({ ...prev, [selectedEx.id]: savedAt }));
 
     setIsSubmitting(true);
     setActiveConsoleTab('tests');
@@ -234,12 +450,29 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
     } else if (pubRes.passed || privRes.passed) {
       status = 'PARTIAL PASS';
       score = 50;
+    } else if (pubRes.isTimeout || privRes.isTimeout) {
+      status = 'TIME LIMIT EXCEEDED';
+      score = 0;
     } else if (pubRes.isError || privRes.isError) {
       status = 'COMPILATION ERROR';
       score = 0;
     }
 
+    const consoleMsg = pubRes.isError ? pubRes.log : pubRes.actualOutput || pubRes.log;
     setOfficialStatus(status);
+    setCustomOutputText(consoleMsg);
+    setConsoleIsError(Boolean(pubRes.isError || privRes.isError));
+
+    setResultsByEx((prev) => ({
+      ...prev,
+      [selectedEx.id]: {
+        publicTestResult: pubRes,
+        privateTestResult: privRes,
+        officialStatus: status,
+        consoleOutput: consoleMsg,
+        consoleIsError: Boolean(pubRes.isError || privRes.isError),
+      },
+    }));
 
     const submissionPayload: Submission = {
       id: 'SUB_' + Date.now(),
@@ -267,14 +500,52 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
   };
 
   const handleResetBoilerplate = () => {
-    if (confirm('Reset code editor to starter boilerplate?')) {
-      setCode(
-        selectedEx?.starterCode && selectedEx.starterCode.trim().length > 0
-          ? selectedEx.starterCode
-          : `import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        \n    }\n}`
-      );
+    if (!confirmReset) {
+      setConfirmReset(true);
+      setTimeout(() => setConfirmReset(false), 3000);
+      return;
+    }
+    const starter = getStarterCode(selectedEx);
+    setCode(starter);
+    setConfirmReset(false);
+    if (selectedEx) {
+      removeStoredDraft(selectedEx.id);
+      setDraftsByEx((prev) => ({ ...prev, [selectedEx.id]: starter }));
+      setSavedTimeByEx((prev) => {
+        const copy = { ...prev };
+        delete copy[selectedEx.id];
+        return copy;
+      });
+      setResultsByEx((prev) => {
+        const copy = { ...prev };
+        delete copy[selectedEx.id];
+        return copy;
+      });
+      setPublicTestResult(null);
+      setPrivateTestResult(null);
+      setOfficialStatus(null);
+      setCustomOutputText('');
+      setConsoleIsError(false);
     }
   };
+
+  const currentIndex = selectedEx ? exercises.findIndex((e) => e.id === selectedEx.id) : -1;
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex >= 0 && currentIndex < exercises.length - 1;
+
+  const handlePrevExercise = () => {
+    if (hasPrev) {
+      handleSelectExercise(exercises[currentIndex - 1]);
+    }
+  };
+
+  const handleNextExercise = () => {
+    if (hasNext) {
+      handleSelectExercise(exercises[currentIndex + 1]);
+    }
+  };
+
+  const currentSavedTime = selectedEx ? savedTimeByEx[selectedEx.id] : undefined;
 
   return (
     <div className="space-y-4">
@@ -342,19 +613,23 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
                 <FileCode className="w-4 h-4 text-indigo-600" />
                 Scheduled Questions ({exercises.length})
               </h3>
+              <span className="text-[10px] text-slate-400">Drafts auto-saved</span>
             </div>
-            <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
               {exercises.length === 0 ? (
                 <div className="text-center py-5 text-slate-400 text-xs">
                   No questions scheduled yet.
                 </div>
               ) : (
-                exercises.map((ex) => {
+                exercises.map((ex, idx) => {
                   const isSelected = selectedEx?.id === ex.id;
+                  const exResult = resultsByEx[ex.id];
+                  const hasDraft = Boolean(savedTimeByEx[ex.id]);
+                  const isPassed = exResult?.officialStatus === 'ALL TEST CASES PASSED' || exResult?.publicTestResult?.passed;
                   return (
                     <button
                       key={ex.id}
-                      onClick={() => setSelectedEx(ex)}
+                      onClick={() => handleSelectExercise(ex)}
                       className={`w-full text-left p-2.5 rounded-xl border transition flex items-center justify-between ${
                         isSelected
                           ? 'bg-indigo-50 border-indigo-400 text-indigo-950 font-bold shadow-xs'
@@ -362,20 +637,36 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
                       }`}
                     >
                       <div className="truncate mr-2">
-                        <div className="text-xs font-bold truncate">{ex.title}</div>
-                        <div className="text-[10px] text-slate-500 font-mono">{ex.id}   {ex.category}</div>
+                        <div className="text-xs font-bold truncate flex items-center gap-1.5">
+                          <span className="text-[10px] font-mono text-indigo-600">Q{idx + 1}.</span>
+                          <span className="truncate">{ex.title}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-mono flex items-center gap-2">
+                          <span>{ex.id} · {ex.category}</span>
+                        </div>
                       </div>
-                      <span
-                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
-                          ex.difficulty === 'Easy'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : ex.difficulty === 'Medium'
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : 'bg-rose-50 text-rose-700 border border-rose-200'
-                        }`}
-                      >
-                        {ex.difficulty}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isPassed ? (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            PASS
+                          </span>
+                        ) : hasDraft ? (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-200">
+                            SAVED
+                          </span>
+                        ) : null}
+                        <span
+                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                            ex.difficulty === 'Easy'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : ex.difficulty === 'Medium'
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          }`}
+                        >
+                          {ex.difficulty}
+                        </span>
+                      </div>
                     </button>
                   );
                 })
@@ -393,7 +684,7 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-mono text-xs text-indigo-600 font-bold">{selectedEx.id}</span>
-                  <span className="text-slate-400"> </span>
+                  <span className="text-slate-400">·</span>
                   <span className="text-xs text-slate-500">{selectedEx.category}</span>
                 </div>
                 <h2 className="text-lg font-bold text-slate-900">{selectedEx.title}</h2>
@@ -434,15 +725,84 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
         {/* Right Column: Code Editor & Console */}
         <div className="lg:col-span-8 space-y-4">
           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs flex flex-col">
+            {/* Program Toggle & Switcher Bar */}
+            {exercises.length > 0 && (
+              <div className="bg-slate-100/80 px-4 py-2 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">
+                    Program:
+                  </span>
+                  <select
+                    value={selectedEx?.id || ''}
+                    onChange={(e) => {
+                      const next = exercises.find((ex) => ex.id === e.target.value);
+                      if (next) handleSelectExercise(next);
+                    }}
+                    className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-500 max-w-xs truncate"
+                  >
+                    {exercises.map((ex, idx) => (
+                      <option key={ex.id} value={ex.id}>
+                        Q{idx + 1}: {ex.title} ({ex.id}){savedTimeByEx[ex.id] ? ' [Saved]' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handlePrevExercise}
+                    disabled={!hasPrev}
+                    className="px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Prev</span>
+                  </button>
+                  <span className="text-[11px] font-mono font-semibold text-slate-600 px-2">
+                    {currentIndex >= 0 ? `${currentIndex + 1} / ${exercises.length}` : `0 / ${exercises.length}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleNextExercise}
+                    disabled={!hasNext}
+                    className="px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Editor Toolbar */}
             <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <span className="text-xs font-mono font-semibold text-slate-800 flex items-center gap-1.5">
                   <FileCode className="w-4 h-4 text-orange-500" />
                   Main.java
                 </span>
                 <span className="text-[10px] text-slate-500 font-mono">JDK 17 Compatible</span>
+                {currentSavedTime && (
+                  <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md font-medium">
+                    Saved {currentSavedTime}
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleManualSaveDraft}
+                  disabled={!selectedEx}
+                  className={`px-2.5 py-1 text-xs rounded-lg font-semibold transition border flex items-center gap-1 ${
+                    justSaved
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                  }`}
+                  title="Save current code draft for this program"
+                >
+                  {justSaved ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Save className="w-3.5 h-3.5 text-indigo-600" />}
+                  <span>{justSaved ? 'Saved!' : 'Save Draft'}</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setUseCustomInput(!useCustomInput)}
@@ -457,11 +817,15 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
                 <button
                   type="button"
                   onClick={handleResetBoilerplate}
-                  className="px-2.5 py-1 text-xs rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition flex items-center gap-1"
-                  title="Reset code"
+                  className={`px-2.5 py-1 text-xs rounded-lg transition flex items-center gap-1 border ${
+                    confirmReset
+                      ? 'bg-rose-50 text-rose-700 border-rose-300 font-semibold'
+                      : 'text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
+                  title="Reset code to starter boilerplate"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Reset</span>
+                  <span>{confirmReset ? 'Confirm Reset?' : 'Reset'}</span>
                 </button>
                 <button
                   type="button"
@@ -487,7 +851,7 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
             <div className="relative bg-slate-50/50 font-mono text-xs">
               <textarea
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(e) => handleCodeChange(e.target.value)}
                 onPaste={handleCodePaste}
                 rows={16}
                 spellCheck={false}
@@ -515,7 +879,7 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
 
           {/* Test Execution & Output Results Console */}
           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
-            <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex items-center justify-between">
+            <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setActiveConsoleTab('tests')}
@@ -602,21 +966,45 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
                                 : 'bg-rose-100 text-rose-800'
                             }`}
                           >
-                            {publicTestResult.passed ? 'PASSED' : 'FAILED'}
+                            {publicTestResult.passed
+                              ? 'PASSED'
+                              : publicTestResult.isTimeout
+                              ? 'TIMEOUT'
+                              : publicTestResult.isError
+                              ? 'ERROR'
+                              : 'FAILED'}
                           </span>
                         </div>
-                        <div className="space-y-1.5 text-[11px] font-mono">
-                          <div className="text-slate-600">
-                            Expected:{' '}
-                            <span className="text-slate-900 font-semibold">{publicTestResult.expectedOutput}</span>
+                        <div className="space-y-2 text-[11px] font-mono">
+                          {(publicTestResult.isError || (!publicTestResult.passed && !publicTestResult.actualOutput && publicTestResult.log)) && (
+                            <div className="bg-slate-900 text-rose-300 rounded-lg p-2.5 border border-rose-300 overflow-x-auto">
+                              <div className="text-[10px] uppercase tracking-wider text-rose-400 font-sans font-bold mb-1">
+                                Compilation / Runtime Error Details:
+                              </div>
+                              <pre className="whitespace-pre-wrap break-words leading-relaxed">{publicTestResult.log}</pre>
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-[10px] text-slate-500 uppercase font-sans block mb-0.5">Expected Output:</span>
+                            <pre className="bg-white/80 border border-slate-200 rounded-lg p-2 text-slate-900 font-semibold whitespace-pre-wrap break-words">
+                              {publicTestResult.expectedOutput || '(Empty)'}
+                            </pre>
                           </div>
-                          <div className="text-slate-600">
-                            Your Output:{' '}
-                            <span className={publicTestResult.passed ? 'text-emerald-700 font-semibold' : 'text-rose-700 font-semibold'}>
-                              {publicTestResult.actualOutput || '(Empty or error)'}
-                            </span>
-                          </div>
-                          {publicTestResult.executionTimeMs && (
+                          {(!publicTestResult.isError || publicTestResult.actualOutput) && (
+                            <div>
+                              <span className="text-[10px] text-slate-500 uppercase font-sans block mb-0.5">Your Output:</span>
+                              <pre
+                                className={`bg-white/80 border rounded-lg p-2 font-semibold whitespace-pre-wrap break-words ${
+                                  publicTestResult.passed
+                                    ? 'border-emerald-200 text-emerald-700'
+                                    : 'border-rose-200 text-rose-700'
+                                }`}
+                              >
+                                {publicTestResult.actualOutput ? publicTestResult.actualOutput : '(No output printed)'}
+                              </pre>
+                            </div>
+                          )}
+                          {publicTestResult.executionTimeMs !== undefined && (
                             <div className="text-[10px] text-slate-500 font-sans">
                               Execution time: {publicTestResult.executionTimeMs} ms
                             </div>
@@ -648,16 +1036,33 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
                                 : 'bg-rose-100 text-rose-800'
                             }`}
                           >
-                            {privateTestResult.passed ? 'PASSED' : 'FAILED'}
+                            {privateTestResult.passed
+                              ? 'PASSED'
+                              : privateTestResult.isTimeout
+                              ? 'TIMEOUT'
+                              : privateTestResult.isError
+                              ? 'ERROR'
+                              : 'FAILED'}
                           </span>
                         </div>
-                        <div className="space-y-1.5 text-[11px] font-mono">
+                        <div className="space-y-2 text-[11px] font-mono">
                           <div className="text-slate-600">
                             Hidden Evaluation Result:{' '}
                             <span className={privateTestResult.passed ? 'text-emerald-700 font-semibold' : 'text-rose-700 font-semibold'}>
-                              {privateTestResult.passed ? 'All constraints satisfied' : 'Output mismatch'}
+                              {privateTestResult.passed
+                                ? 'All constraints satisfied'
+                                : privateTestResult.isTimeout
+                                ? 'Time limit exceeded'
+                                : privateTestResult.isError
+                                ? 'Compilation / Runtime Error'
+                                : 'Output mismatch'}
                             </span>
                           </div>
+                          {privateTestResult.isError && privateTestResult.log && (
+                            <div className="bg-slate-900 text-rose-300 rounded-lg p-2.5 border border-rose-300 overflow-x-auto">
+                              <pre className="whitespace-pre-wrap break-words leading-relaxed">{privateTestResult.log}</pre>
+                            </div>
+                          )}
                           <div className="text-[10px] text-slate-500 font-sans">
                             Private inputs remain hidden to ensure grading integrity.
                           </div>
@@ -671,12 +1076,12 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
 
             {/* Tab 2: Console Output */}
             {activeConsoleTab === 'output' && (
-              <div className="p-4 bg-slate-900 font-mono text-xs text-emerald-400 min-h-28">
+              <div className={`p-4 bg-slate-900 font-mono text-xs min-h-28 ${consoleIsError ? 'text-rose-300' : 'text-emerald-400'}`}>
                 {customOutputText ? (
-                  <pre className="whitespace-pre-wrap">{customOutputText}</pre>
+                  <pre className="whitespace-pre-wrap break-words">{customOutputText}</pre>
                 ) : (
                   <div className="text-slate-500">
-                    Console output will appear here after running your code.
+                    Console output or compiler errors will appear here after running your code.
                   </div>
                 )}
               </div>
@@ -721,3 +1126,4 @@ export const StudentIDE: React.FC<StudentIDEProps> = ({
     </div>
   );
 };
+

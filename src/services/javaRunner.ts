@@ -42,10 +42,30 @@ export class JavaRunnerService {
         if (response.ok) {
           const data = await response.json();
           const executionTime = Math.round(performance.now() - startTime);
+          const rawLog = data.log || (data.passed ? 'PASSED' : 'FAILED');
+          const actualOutput =
+            typeof data.actualOutput === 'string'
+              ? data.actualOutput
+              : data.log?.includes('Got:\n')
+              ? data.log.split('Got:\n')[1]
+              : '';
+          const isError = Boolean(
+            data.isError ||
+              (typeof rawLog === 'string' &&
+                /compilation\s*(\/\s*runtime)?\s*error|runtime\s*\/\s*execution\s*error|execution\s*timed\s*out|exception/i.test(
+                  rawLog
+                ))
+          );
+          const isTimeout = Boolean(
+            data.isTimeout ||
+              (typeof rawLog === 'string' && /timed\s*out/i.test(rawLog))
+          );
           return {
             passed: Boolean(data.passed),
-            log: data.log || (data.passed ? 'PASSED' : 'FAILED'),
-            actualOutput: data.actualOutput || (data.log?.includes('Got:\n') ? data.log.split('Got:\n')[1] : ''),
+            isError,
+            isTimeout,
+            log: rawLog,
+            actualOutput,
             expectedOutput: expectedOutput.trim(),
             executionTimeMs: executionTime,
           };
@@ -75,6 +95,8 @@ export class JavaRunnerService {
       return {
         passed: false,
         log: 'Compilation Error: Empty file provided.',
+        actualOutput: '',
+        expectedOutput: expectedOutput.trim(),
         isError: true,
       };
     }
@@ -83,6 +105,8 @@ export class JavaRunnerService {
       return {
         passed: false,
         log: 'Compilation Error: Main method not found in class. Expected:\npublic static void main(String[] args)',
+        actualOutput: '',
+        expectedOutput: expectedOutput.trim(),
         isError: true,
       };
     }
@@ -111,6 +135,8 @@ export class JavaRunnerService {
       return {
         passed: false,
         log: `Compilation Error: Syntax error on token "}", mismatched braces (unclosed: ${openBraces})`,
+        actualOutput: '',
+        expectedOutput: expectedOutput.trim(),
         isError: true,
       };
     }
@@ -119,7 +145,7 @@ export class JavaRunnerService {
     try {
       const output = this.interpretJava(cleanCode, input);
       const executionTime = Math.round(performance.now() - startTime) + Math.floor(Math.random() * 15 + 10);
-      
+
       const normalizedActual = output.trim().replace(/\r\n/g, '\n');
       const normalizedExpected = (expectedOutput || '').trim().replace(/\r\n/g, '\n');
       const passed = normalizedActual === normalizedExpected;
@@ -134,9 +160,13 @@ export class JavaRunnerService {
         executionTimeMs: executionTime,
       };
     } catch (err: any) {
+      const rawMsg = err?.message || String(err);
+      const isSyntaxLike = /syntax|unexpected|is not defined|missing|\';\'/i.test(rawMsg);
       return {
         passed: false,
-        log: `Runtime / Execution Error:\n${err.message || String(err)}`,
+        log: isSyntaxLike
+          ? `Compilation / Syntax Error:\n${rawMsg}`
+          : `Runtime / Execution Error:\n${rawMsg}`,
         isError: true,
         actualOutput: '',
         expectedOutput: expectedOutput.trim(),
@@ -161,15 +191,47 @@ export class JavaRunnerService {
     // Remove comments
     jsCode = jsCode.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1');
 
-    // Extract main method body
-    const mainRegex = /public\s+static\s+void\s+main\s*\([^)]*\)\s*\{([\s\S]*)\}/;
-    const match = jsCode.match(mainRegex);
-    let body = match ? match[1] : jsCode;
-
-    // Strip trailing class braces
-    const lastBrace = body.lastIndexOf('}');
-    if (lastBrace !== -1 && !match) {
-      body = body.substring(0, lastBrace);
+    // Extract main method body using balanced brace matching
+    const mainHeaderMatch = jsCode.match(/public\s+static\s+void\s+main\s*\([^)]*\)\s*\{/);
+    let body = jsCode;
+    if (mainHeaderMatch && mainHeaderMatch.index !== undefined) {
+      const startIdx = mainHeaderMatch.index + mainHeaderMatch[0].length;
+      let depth = 1;
+      let inStr = false;
+      let inChar = false;
+      let esc = false;
+      let endIdx = jsCode.length;
+      for (let i = startIdx; i < jsCode.length; i++) {
+        const ch = jsCode[i];
+        if (esc) {
+          esc = false;
+          continue;
+        }
+        if (ch === '\\') {
+          esc = true;
+          continue;
+        }
+        if (ch === '"' && !inChar) {
+          inStr = !inStr;
+        } else if (ch === "'" && !inStr) {
+          inChar = !inChar;
+        } else if (!inStr && !inChar) {
+          if (ch === '{') depth++;
+          else if (ch === '}') {
+            depth--;
+            if (depth === 0) {
+              endIdx = i;
+              break;
+            }
+          }
+        }
+      }
+      body = jsCode.slice(startIdx, endIdx);
+    } else {
+      const lastBrace = body.lastIndexOf('}');
+      if (lastBrace !== -1) {
+        body = body.substring(0, lastBrace);
+      }
     }
 
     // Output statements
@@ -189,20 +251,32 @@ export class JavaRunnerService {
     body = body.replace(/[a-zA-Z0-9_]+\.hasNext\s*\(\)/g, 'hasNextToken()');
     body = body.replace(/[a-zA-Z0-9_]+\.close\s*\(\);?/g, '');
 
-    // Variable types to let
-    const types = ['int', 'double', 'float', 'long', 'boolean', 'char', 'String', 'StringBuilder', 'ArrayList<.*?>'];
+    // Arrays (convert before scalar types so type[] and type var[] are handled cleanly)
+    body = body.replace(/(?:int|double|float|long|short|byte|boolean|char|String)\[\]\s+([a-zA-Z0-9_]+)\s*=\s*new\s+[a-zA-Z0-9_]+\[(.*?)\]\[(.*?)\];/g, 'let $1 = Array.from({length: $2}, () => new Array($3).fill(0));');
+    body = body.replace(/(?:int|double|float|long|short|byte|boolean|char|String)\[\]\s+([a-zA-Z0-9_]+)\s*=\s*new\s+[a-zA-Z0-9_]+\[(.*?)\];/g, 'let $1 = new Array($2).fill(0);');
+    body = body.replace(/(?:int|double|float|long|short|byte|boolean|char|String)\s+([a-zA-Z0-9_]+)\[\]\s*=\s*new\s+[a-zA-Z0-9_]+\[(.*?)\];/g, 'let $1 = new Array($2).fill(0);');
+    body = body.replace(/([a-zA-Z0-9_]+)\[\]\s+([a-zA-Z0-9_]+)\s*=\s*\{(.*?)\};/g, 'let $2 = [$3];');
+    body = body.replace(/([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\[\]\s*=\s*\{(.*?)\};/g, 'let $2 = [$3];');
+    body = body.replace(/Arrays\.sort\s*\((.*?)\);/g, '$1.sort((a,b)=>a-b);');
+    body = body.replace(/\.length\(\)/g, '.length');
+
+    // for-loop initializers (e.g., for (int i = 0; i < n; i++))
+    body = body.replace(/\bfor\s*\(\s*(?:int|long|double|float|short|byte|char|String)\s+/g, 'for (let ');
+
+    // Scalar & multi-variable declarations (supports single and comma-separated like: int a,b,c,d; or int a = 1, b = 2;)
+    const declRegex = /(^|[;{}\n])([ \t]*)(?:final\s+)?(?:int|double|float|long|short|byte|boolean|char|String|StringBuilder|ArrayList<[^>]+>)\s+(?![a-zA-Z0-9_]+\s*\()([^;{}\n]+);/g;
+    for (let pass = 0; pass < 10; pass++) {
+      const nextBody = body.replace(declRegex, '$1$2let $3;');
+      if (nextBody === body) break;
+      body = nextBody;
+    }
+
+    // Fallback single-variable declaration replacement
+    const types = ['int', 'double', 'float', 'long', 'short', 'byte', 'boolean', 'char', 'String', 'StringBuilder', 'ArrayList<.*?>'];
     types.forEach((t) => {
       const typeReg = new RegExp(`\\b${t}\\s+([a-zA-Z0-9_]+)(\\s*=\\s*|\\s*;)`, 'g');
       body = body.replace(typeReg, 'let $1$2');
     });
-
-    // Arrays
-    body = body.replace(/let\s+([a-zA-Z0-9_]+)\s*=\s*new\s+[a-zA-Z0-9_]+\[(.*?)\]\[(.*?)\];/g, 'let $1 = Array.from({length: $2}, () => new Array($3).fill(0));');
-    body = body.replace(/let\s+([a-zA-Z0-9_]+)\s*=\s*new\s+[a-zA-Z0-9_]+\[(.*?)\];/g, 'let $1 = new Array($2).fill(0);');
-    body = body.replace(/([a-zA-Z0-9_]+)\[\]\s+([a-zA-Z0-9_]+)\s*=\s*new\s+[a-zA-Z0-9_]+\[(.*?)\];/g, 'let $2 = new Array($3).fill(0);');
-    body = body.replace(/([a-zA-Z0-9_]+)\[\]\s+([a-zA-Z0-9_]+)\s*=\s*\{(.*?)\};/g, 'let $2 = [$3];');
-    body = body.replace(/Arrays\.sort\s*\((.*?)\);/g, '$1.sort((a,b)=>a-b);');
-    body = body.replace(/\.length\(\)/g, '.length');
 
     // String methods
     body = body.replace(/\.charAt\((.*?)\)/g, '[$1]');
@@ -286,7 +360,14 @@ export class JavaRunnerService {
       }
       return outputBuffer.join('\n');
     } catch (e: any) {
-      throw new Error(`Java Execution: ${e.message}`);
+      const msg = e?.message || String(e);
+      if (msg.includes('System is not defined')) {
+        throw new Error('SyntaxError: Check System.out.println(...) statement or missing semicolon (;)');
+      }
+      if (e instanceof SyntaxError) {
+        throw new Error(`SyntaxError: ${msg} (check missing semicolons, quotes, or brackets)`);
+      }
+      throw new Error(msg);
     }
   }
 }

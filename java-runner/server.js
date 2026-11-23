@@ -109,8 +109,26 @@ app.post('/execute', checkAuth, async (req, res) => {
             resolve(
               res.json({
                 passed: false,
+                isError: true,
                 log: 'Compilation / Runtime Error:\n' + compileErr,
-                actualOutput: '',
+                actualOutput: actualOutput,
+              })
+            );
+            return;
+          }
+
+          if (error) {
+            const isTimeout = error.code === 124 || Boolean(error.killed);
+            const errorMsg = isTimeout
+              ? 'Execution Timed Out (exceeded 5s limit — check for infinite loops or blocking input).'
+              : `Runtime / Execution Error (exit code ${error.code ?? 'unknown'}):\n${error.message}`;
+            resolve(
+              res.json({
+                passed: false,
+                isError: true,
+                isTimeout,
+                log: errorMsg,
+                actualOutput: actualOutput,
               })
             );
             return;
@@ -122,6 +140,7 @@ app.post('/execute', checkAuth, async (req, res) => {
           resolve(
             res.json({
               passed: passed,
+              isError: false,
               actualOutput: actualOutput,
               log: passed
                 ? 'PASSED'
