@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-lg text-slate-900 tracking-tight">
-                Object Oriented Programming Lab<span className="text-orange-500">   BCB52003</span>
+               OBJECT ORIENTED PROGRAMMING APPROACH Lab<span className="text-orange-500">   BCB52003</span>
                 </span>
                 
               </div>
