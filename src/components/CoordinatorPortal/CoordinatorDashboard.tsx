@@ -45,8 +45,8 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [formFeedback, setFormFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Change Password State (also opens automatically after first login with default Admin@123)
-  const [showChangePassword, setShowChangePassword] = useState(Boolean(currentUser.mustChangePassword));
+  // On-demand Change Password panel (only opens when clicking Change Password button)
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [currentPwd, setCurrentPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
   const [confirmPwd, setConfirmPwd] = useState('');
@@ -235,31 +235,28 @@ export const CoordinatorDashboard: React.FC<CoordinatorDashboardProps> = ({
         </div>
       </div>
 
-      {/* First-login Default Password Security Prompt or Change Password Panel */}
-      {(currentUser.mustChangePassword || showChangePassword) && (
-        <div className="bg-white border-2 border-amber-300 rounded-2xl p-5 shadow-xs space-y-4">
+      {/* On-demand Change Password Panel */}
+      {showChangePassword && (
+        <div className="bg-white border border-violet-200 rounded-2xl p-5 shadow-xs space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-2.5">
-              <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <ShieldAlert className="w-5 h-5 text-violet-600 shrink-0 mt-0.5" />
               <div>
                 <h2 className="text-sm font-black text-slate-900">
-                  {currentUser.mustChangePassword
-                    ? 'Change Default Password (First-Time Login)'
-                    : 'Update Coordinator Password & Official Email'}
+                  Update Coordinator Password &amp; Official Email
                 </h2>
                 <p className="text-xs text-slate-600 mt-0.5">
                   Set a new password and register your official email ID for Forgot Password OTP recovery.
                 </p>
               </div>
             </div>
-            {!currentUser.mustChangePassword && (
-              <button
-                onClick={() => setShowChangePassword(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+            <button
+              onClick={() => setShowChangePassword(false)}
+              className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100"
+              title="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
           {pwdFeedback && (
