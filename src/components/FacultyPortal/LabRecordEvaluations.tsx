@@ -1035,20 +1035,24 @@ export const LabRecordEvaluations: React.FC<LabRecordEvaluationsProps> = ({
                             <span>{item.isVerifiedAndApproved ? 'Re-Grade' : 'Evaluate'}</span>
                           </button>
 
-                          {!item.isVerifiedAndApproved && totals.hasMarks && (
+                          {!item.isVerifiedAndApproved && (
                             <button
-                              onClick={() =>
-                                onSaveEvaluation({
-                                  ...item,
-                                  assessmentType: evalMode,
-                                  status: 'EVALUATED_APPROVED',
-                                  isVerifiedAndApproved: true,
-                                  evaluatedBy: currentUser.name || 'Faculty Admin',
-                                  evaluatedAt: new Date().toISOString(),
-                                })
-                              }
+                              onClick={() => {
+                                if (totals.hasMarks) {
+                                  onSaveEvaluation({
+                                    ...item,
+                                    assessmentType: evalMode,
+                                    status: 'EVALUATED_APPROVED',
+                                    isVerifiedAndApproved: true,
+                                    evaluatedBy: currentUser.name || 'Faculty Admin',
+                                    evaluatedAt: new Date().toISOString(),
+                                  });
+                                } else {
+                                  handleAutoEvaluateSingle(item);
+                                }
+                              }}
                               className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-2xs transition"
-                              title="Approve this evaluated record"
+                              title="Approve this evaluated record and unlock student PDF download"
                             >
                               <Check className="w-3.5 h-3.5" />
                               <span>Approve</span>

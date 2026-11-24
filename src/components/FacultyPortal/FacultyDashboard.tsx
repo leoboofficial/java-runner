@@ -105,6 +105,42 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
   const passRate = submissions.length > 0 ? Math.round((passedCount / submissions.length) * 100) : 0;
   const highRiskViolations = violations.filter((v) => v.severity === 'high').length;
 
+  const evalSummary = React.useMemo(() => {
+    const seen = new Set<string>();
+    let approved = 0;
+    let pending = 0;
+
+    evaluations.forEach((e) => {
+      const reg = (e.regNo || '').trim().toUpperCase();
+      const mode = e.assessmentType === 'ESE' ? 'ESE' : 'LAB';
+      if (!reg) return;
+      seen.add(`${mode}_${reg}`);
+      if (e.isVerifiedAndApproved || e.status === 'APPROVED' || e.status === 'EVALUATED_APPROVED') {
+        approved++;
+      } else {
+        pending++;
+      }
+    });
+
+    submissions.forEach((s) => {
+      const reg = (s.regNo || '').trim().toUpperCase();
+      const mode =
+        s.assessmentType === 'ESE'
+          ? 'ESE'
+          : exercises.find((ex) => ex.id === s.exerciseId)?.assessmentType === 'ESE'
+          ? 'ESE'
+          : 'LAB';
+      if (!reg) return;
+      const key = `${mode}_${reg}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        pending++;
+      }
+    });
+
+    return { total: seen.size, approved, pending };
+  }, [evaluations, submissions, exercises]);
+
   return (
     <div className="space-y-6">
       {/* Faculty Hero Banner */}
@@ -132,7 +168,7 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
               title="View the list of students who submitted their Lab Records for rubric evaluation and approval"
             >
               <FileText className="w-4 h-4 text-white" />
-              <span>Submitted Lab Records ({evaluations.length})</span>
+              <span>Submitted Lab Records ({evalSummary.total})</span>
             </button>
             <button
               onClick={() => setShowExportModal(true)}
@@ -249,9 +285,9 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
               <span>Rubric Evaluations</span>
               <Award className="w-4 h-4 text-amber-600" />
             </div>
-            <div className="text-2xl font-black text-slate-900">{evaluations.length}</div>
+            <div className="text-2xl font-black text-slate-900">{evalSummary.total}</div>
             <div className="text-[10px] text-amber-700 font-semibold mt-0.5">
-              {evaluations.filter((e) => e.status === 'APPROVED' || e.status === 'EVALUATED_APPROVED').length} Approved &bull; {evaluations.filter((e) => e.status === 'PENDING' || e.status === 'PENDING_EVALUATION').length} Pending &rarr;
+              {evalSummary.approved} Approved &bull; {evalSummary.pending} Pending &rarr;
             </div>
           </div>
 
@@ -334,7 +370,7 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
           }`}
         >
           <Award className="w-4 h-4" />
-          Rubric Evaluations & Records ({evaluations.length})
+          Rubric Evaluations &amp; Records ({evalSummary.total})
         </button>
         <button
           onClick={() => setActiveSubTab('exercises')}
@@ -411,6 +447,10 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
             students={students}
             violations={violations}
             loginAudit={loginAudit}
+            evaluations={evaluations}
+            rubricConfig={rubricConfig}
+            currentUser={currentUser}
+            onSaveEvaluation={onSaveEvaluation}
           />
         )}
         {activeSubTab === 'violations' && (
