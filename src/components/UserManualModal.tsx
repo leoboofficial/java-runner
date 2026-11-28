@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
   Award,
   FileText,
+  Download,
 } from 'lucide-react';
 
 interface UserManualModalProps {
@@ -101,6 +102,17 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {(isFaculty || isCoordinator) && (
+              <a
+                href="./BCB52003_Tech_Stack_Tutorial.pdf"
+                download="BCB52003_Tech_Stack_Tutorial.pdf"
+                className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition"
+                title="Download beginner tutorial PDF covering Vite, Node.js & Docker used in this app"
+              >
+                <Download className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Tech Stack Tutorial (PDF)</span>
+              </a>
+            )}
             <button
               onClick={handlePrint}
               className={`px-3.5 py-1.5 rounded-xl text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition ${

@@ -1,0 +1,453 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [ 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R ] /Count 6 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 8160 >>
+stream
+q 0.100 0.140 0.240 rg 0.960 0.450 0.090 RG 1.40 w 44.00 697.89 507.28 98.00 re B Q
+q 0.960 0.450 0.090 rg 44.00 697.89 8.00 98.00 re f Q
+BT /F2 8.8 Tf 0.980 0.650 0.300 rg 64.00 771.89 Td (CODEBASE-SPECIFIC BEGINNER TUTORIAL) Tj ET
+BT /F2 14.2 Tf 1.000 1.000 1.000 rg 64.00 749.89 Td (OBJECT ORIENTED PROGRAMMING APPROACH Lab \(BCB52003\)) Tj ET
+BT /F1 10.0 Tf 0.860 0.900 0.960 rg 64.00 731.89 Td (How Vite, React + TypeScript, Node.js, Docker, GitHub Pages & Google Sheets) Tj ET
+BT /F1 10.0 Tf 0.860 0.900 0.960 rg 64.00 717.89 Td (work together inside this exact application) Tj ET
+q 0.950 0.960 1.000 rg 0.310 0.270 0.900 RG 0.90 w 44.00 635.89 507.28 44.00 re B Q
+q 0.310 0.270 0.900 rg 44.00 635.89 6.00 44.00 re f Q
+BT /F2 12.5 Tf 0.080 0.100 0.180 rg 58.00 663.89 Td (1. Big Picture: Why This App Uses 4 Different Technologies) Tj ET
+BT /F1 8.8 Tf 0.320 0.370 0.480 rg 58.00 648.89 Td (Understanding what runs in the Student's Browser vs Cloud Servers) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 623.89 Td (A browser \(Chrome/Edge\) can display React pages and run JavaScript, but a browser CANNOT safely run the) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 610.39 Td (real Java compiler \(javac\) or store shared university exam marks for 60 students. To solve this without expensive) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 596.89 Td (infrastructure, this app splits work across four specialized tools:) Tj ET
+q 0.970 0.980 0.990 rg 0.800 0.840 0.900 RG 0.80 w 44.00 412.59 507.28 166.80 re B Q
+q 0.910 0.930 0.970 rg 44.00 561.39 507.28 18.00 re f Q
+BT /F2 8.2 Tf 0.150 0.180 0.250 rg 54.00 566.39 Td (How Data & Code Flow in This Application) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 548.39 Td ([1. Browser / Student, Faculty & Coordinator Portals]) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 536.99 Td (    Built by VITE \(src/App.tsx, Tailwind CSS, React 19 + TypeScript\)) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 525.59 Td (    Hosted as static HTML/JS/CSS on GitHub Pages \(dist/ and docs/\)) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 514.19 Td (       |) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 502.79 Td (       +---> \(A\) Auth, Questions, Rubrics, Marks, Logs:) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 491.39 Td (       |         Calls Google Apps Script \(apps_script/Code.gs\)) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 479.99 Td (       |         which reads & writes tabs in Google Sheets.) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 468.59 Td (       |) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 457.19 Td (       +---> \(B\) Real OpenJDK 17 Java Compilation & Execution:) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 445.79 Td (                 Calls POST /execute on Render Docker Container) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 434.39 Td (                 running Node.js + Express \(java-runner/server.js\)) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 422.99 Td (                 inside Eclipse Temurin JDK 17 \(Dockerfile\).) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 402.59 Td (Technology-to-File Map \(Exact Files in Your Repository\)) Tj ET
+q 0.140 0.180 0.280 rg 0.800 0.840 0.900 RG 0.60 w 44.00 369.59 115.00 18.00 re B Q
+BT /F2 8.4 Tf 1.000 1.000 1.000 rg 50.00 375.59 Td (Technology) Tj ET
+q 0.140 0.180 0.280 rg 0.800 0.840 0.900 RG 0.60 w 159.00 369.59 165.00 18.00 re B Q
+BT /F2 8.4 Tf 1.000 1.000 1.000 rg 165.00 375.59 Td (Exact Files in This Repo) Tj ET
+q 0.140 0.180 0.280 rg 0.800 0.840 0.900 RG 0.60 w 324.00 369.59 227.28 18.00 re B Q
+BT /F2 8.4 Tf 1.000 1.000 1.000 rg 330.00 375.59 Td (What It Does in This App) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 351.59 115.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 357.59 Td (Vite 8) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 159.00 351.59 165.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 165.00 357.59 Td (vite.config.ts, package.json) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 324.00 351.59 227.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 330.00 357.59 Td (Runs dev server \(port 3000\) & builds static bundle) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 333.59 115.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 339.59 Td (React 19 + TS) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 159.00 333.59 165.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 165.00 339.59 Td (src/App.tsx, src/components/) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 324.00 333.59 227.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 330.00 339.59 Td (3 portals \(Student, Faculty, Coordinator\) + PDF) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 315.59 115.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 321.59 Td (Tailwind CSS 4) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 159.00 315.59 165.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 165.00 321.59 Td (src/index.css, @tailwindcss/vite) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 324.00 315.59 227.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 330.00 321.59 Td (Utility styling + A4 @media print rules) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 297.59 115.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 303.59 Td (Node.js + Express) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 159.00 297.59 165.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 165.00 303.59 Td (java-runner/server.js, server.js) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 324.00 297.59 227.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 330.00 303.59 Td (REST API \(/execute\) that queues & runs javac/java) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 279.59 115.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 285.59 Td (Docker + JDK 17) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 159.00 279.59 165.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 165.00 285.59 Td (Dockerfile, java-runner/Dockerfile) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 324.00 279.59 227.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 330.00 285.59 Td (Packages Linux + OpenJDK 17 + Node 22 + sandbox) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 261.59 115.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 267.59 Td (GitHub Actions) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 159.00 261.59 165.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 165.00 267.59 Td (.github/workflows/deploy.yml) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 324.00 261.59 227.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 330.00 267.59 Td (Auto-builds dist/ with VITE_* vars on git push) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 243.59 115.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 249.59 Td (Apps Script) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 159.00 243.59 165.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 165.00 249.59 Td (apps_script/Code.gs) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 324.00 243.59 227.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 330.00 249.59 Td (Headless REST API connected to Google Sheets) Tj ET
+q 0.930 0.980 0.950 rg 0.100 0.550 0.380 RG 0.80 w 44.00 168.09 507.28 65.50 re B Q
+BT /F2 9.2 Tf 0.100 0.550 0.380 rg 54.00 219.59 Td (Key Beginner Takeaway) Tj ET
+BT /F1 9.0 Tf 0.120 0.180 0.200 rg 54.00 205.59 Td (Node.js is NOT serving your React website in production! In production, GitHub Pages serves static HTML/JS) Tj ET
+BT /F1 9.0 Tf 0.120 0.180 0.200 rg 54.00 193.09 Td (built by Vite, while Node.js runs ONLY inside your Render Docker container to compile and run student Java) Tj ET
+BT /F1 9.0 Tf 0.120 0.180 0.200 rg 54.00 180.59 Td (programs.) Tj ET
+q 0.850 0.880 0.920 RG 0.60 w 44.00 34.00 m 551.28 34.00 l S Q
+BT /F1 7.5 Tf 0.450 0.500 0.580 rg 44.00 22.00 Td (OBJECT ORIENTED PROGRAMMING APPROACH Lab \(BCB52003\) - Codebase Technology Guide) Tj ET
+BT /F1 7.5 Tf 0.450 0.500 0.580 rg 509.28 22.00 Td (Page 1) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 6686 >>
+stream
+q 0.950 0.960 0.980 rg 0.00 809.89 595.28 32.00 re f Q
+q 0.850 0.880 0.930 RG 0.80 w 0.00 809.89 m 595.28 809.89 l S Q
+BT /F2 8.5 Tf 0.280 0.330 0.450 rg 44.00 820.89 Td (BCB52003 Tech Stack Tutorial \(Vite, Node.js & Docker\)) Tj ET
+BT /F2 8.5 Tf 0.400 0.450 0.550 rg 509.28 820.89 Td (Page 2) Tj ET
+q 0.950 0.960 1.000 rg 0.390 0.350 0.920 RG 0.90 w 44.00 741.89 507.28 44.00 re B Q
+q 0.390 0.350 0.920 rg 44.00 741.89 6.00 44.00 re f Q
+BT /F2 12.5 Tf 0.080 0.100 0.180 rg 58.00 769.89 Td (2. Vite: Frontend Dev Server & Static Bundler) Tj ET
+BT /F1 8.8 Tf 0.320 0.370 0.480 rg 58.00 754.89 Td (Files: package.json, vite.config.ts, index.html, src/main.tsx, .env.example) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 729.89 Td (Browsers cannot read TypeScript \(.tsx\) files or Tailwind CSS v4 directives directly. Vite is the tool that) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 716.39 Td (translates your src/ folder into plain HTML, CSS, and JavaScript that any browser understands.) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 698.89 Td (A. What happens when you run 'npm run dev' \(Development Mode\)) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 683.89 Td (* package.json script:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 155.28 683.89 Td ("dev": "vite --port=3000 --host=0.0.0.0" launches Vite's local HTTP server on port 3000.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 667.99 Td (* Entry point \(index.html\):) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 171.90 667.99 Td (Browser loads /index.html, which contains <div id="root"></div> and <script) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 654.59 Td (type="module" src="/src/main.tsx"></script>.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 638.69 Td (* On-the-fly transform:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 161.85 638.69 Td (Vite reads vite.config.ts, activates @vitejs/plugin-react \(for JSX/TSX\) and) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 625.29 Td (@tailwindcss/vite \(for @import "tailwindcss" in src/index.css\), and compiles only the files the browser requests.) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 609.39 Td (B. What happens when you run 'npm run build' \(Production Mode\)) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 594.39 Td (* Static output:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 122.24 594.39 Td (Vite compiles and minifies all 1,680+ modules into dist/index.html, dist/assets/*.css, and) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 580.99 Td (dist/assets/*.js. We also copy dist/ into docs/ for GitHub Pages.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 565.09 Td (* Why base: './' matters:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 167.82 565.09 Td (In vite.config.ts, base: './' tells Vite to use relative asset links \(./assets/...\) so the app) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 551.69 Td (works even when hosted at https://leoboofficial.github.io/java-runner/ instead of a root domain.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 535.79 Td (* Why 404.html & .nojekyll exist:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 205.24 535.79 Td (In .github/workflows/deploy.yml, dist/index.html is copied to dist/404.html and) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 522.39 Td (an empty .nojekyll file is added so GitHub Pages serves the SPA cleanly without Jekyll stripping files.) Tj ET
+q 0.970 0.980 0.990 rg 0.800 0.840 0.900 RG 0.80 w 44.00 385.29 507.28 121.20 re B Q
+q 0.910 0.930 0.970 rg 44.00 488.49 507.28 18.00 re f Q
+BT /F2 8.2 Tf 0.150 0.180 0.250 rg 54.00 493.49 Td (Inside vite.config.ts \(Annotated for Beginners\)) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 475.49 Td (export default defineConfig\(\(\) => \({) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 464.09 Td (  base: './',                          // Relative URLs for GitHub Pages) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 452.69 Td (  plugins: [react\(\), tailwindcss\(\)],   // Compile TSX + Tailwind CSS v4) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 441.29 Td (  server: {) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 429.89 Td (    host: '0.0.0.0', port: 3000,       // Listen on port 3000) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 418.49 Td (    hmr: process.env.DISABLE_HMR !== 'true') Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 407.09 Td (  }) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 395.69 Td (}\)\);) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 375.29 Td (C. How VITE_* Environment Variables Work \(src/App.tsx\)) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 360.29 Td (Because the Vite production build runs on GitHub Actions and outputs static files, there is NO server reading .env) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 346.79 Td (when a student opens the site. Instead, Vite permanently embeds variables starting with VITE_ at build time via) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 333.29 Td (import.meta.env:) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 315.79 Td (* VITE_APPS_SCRIPT_URL:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 197.47 315.79 Td (Google Apps Script Web App \(/exec\) URL for login, exercises, evaluations, and) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 302.39 Td (sheets.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 286.49 Td (* VITE_RENDER_SERVICE_URL:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 218.07 286.49 Td (URL of your Docker Java Runner on Render \(App.tsx appends /execute if) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 273.09 Td (missing\).) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 257.19 Td (* VITE_API_SECRET:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 164.64 257.19 Td (Shared secret key sent in the x-api-key header when calling Render.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 241.29 Td (* VITE_GOOGLE_CLIENT_ID:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 204.34 241.29 Td (Optional Google OAuth Client ID to verify a student's signed-in Gmail account.) Tj ET
+q 0.930 0.980 0.950 rg 0.100 0.550 0.380 RG 0.80 w 44.00 172.39 507.28 53.00 re B Q
+BT /F2 9.2 Tf 0.100 0.550 0.380 rg 54.00 211.39 Td (Why Client Variables Must Start With VITE_) Tj ET
+BT /F1 9.0 Tf 0.120 0.180 0.200 rg 54.00 197.39 Td (Vite intentionally hides any variable without the VITE_ prefix \(like GEMINI_API_KEY\) so private server secrets) Tj ET
+BT /F1 9.0 Tf 0.120 0.180 0.200 rg 54.00 184.89 Td (are never accidentally leaked into browser JavaScript bundles.) Tj ET
+q 0.850 0.880 0.920 RG 0.60 w 44.00 34.00 m 551.28 34.00 l S Q
+BT /F1 7.5 Tf 0.450 0.500 0.580 rg 44.00 22.00 Td (OBJECT ORIENTED PROGRAMMING APPROACH Lab \(BCB52003\) - Codebase Technology Guide) Tj ET
+BT /F1 7.5 Tf 0.450 0.500 0.580 rg 509.28 22.00 Td (Page 2) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 5670 >>
+stream
+q 0.950 0.960 0.980 rg 0.00 809.89 595.28 32.00 re f Q
+q 0.850 0.880 0.930 RG 0.80 w 0.00 809.89 m 595.28 809.89 l S Q
+BT /F2 8.5 Tf 0.280 0.330 0.450 rg 44.00 820.89 Td (BCB52003 Tech Stack Tutorial \(Vite, Node.js & Docker\)) Tj ET
+BT /F2 8.5 Tf 0.400 0.450 0.550 rg 509.28 820.89 Td (Page 3) Tj ET
+q 0.950 0.960 1.000 rg 0.050 0.520 0.450 RG 0.90 w 44.00 741.89 507.28 44.00 re B Q
+q 0.050 0.520 0.450 rg 44.00 741.89 6.00 44.00 re f Q
+BT /F2 12.5 Tf 0.080 0.100 0.180 rg 58.00 769.89 Td (3. React 19, TypeScript & App Architecture \(src/\)) Tj ET
+BT /F1 8.8 Tf 0.320 0.370 0.480 rg 58.00 754.89 Td (Files: src/App.tsx, src/services/javaRunner.ts, src/services/sheetService.ts, src/index.css) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 729.89 Td (A. Three Portals Without a Backend Router \(Hash Routing\)) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 714.89 Td (This app serves Students \(/#/student\), Faculty \(/#/faculty\), and Course Coordinators \(/#/coordinator\) from one) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 701.39 Td (React app. In src/App.tsx, detectPortalFromUrl\(\) inspects window.location.hash so switching portals never asks) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 687.89 Td (GitHub Pages for a new HTML file.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 670.39 Td (* Isolated Sessions:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 149.81 670.39 Td (Each portal uses its own localStorage key \(javalab_pro_user_student, _faculty,) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 656.99 Td (_coordinator\) so browser reloads keep you signed in to the right portal.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 641.09 Td (* Live ESE Switching:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 157.07 641.09 Td (FacultyDashboard toggles ExamConfig \(LAB vs ESE\) in Google Sheets; StudentDashboard) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 627.69 Td (filters exercises so students keep the exact same IDE UI but see only ESE questions during an exam.) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 611.79 Td (B. Dual-Engine Java Execution \(src/services/javaRunner.ts\)) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 596.79 Td (When a student clicks 'Run Public Tests' or 'Submit Code' in StudentIDE.tsx, JavaRunnerService.execute\(\) runs) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 583.29 Td (a two-step fallback pipeline:) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 565.79 Td (* Step 1 - Remote Docker Runner:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 212.40 565.79 Td (Sends HTTP POST with { code, input, expectedOutput } and header x-api-key) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 552.39 Td (to VITE_RENDER_SERVICE_URL/execute. Real javac compiles and runs OpenJDK 17 code.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 536.49 Td (* Step 2 - Built-in Fallback Engine:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 218.17 536.49 Td (If Render's free container is asleep or unreachable, executeBuiltIn\(\)) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 523.09 Td (parses Java main\(\), variables \(int a,b,c,d;\), Scanner calls, loops, and System.out.println\(\) into sandboxed JS so) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 509.69 Td (students are never blocked.) Tj ET
+q 0.970 0.980 0.990 rg 0.800 0.840 0.900 RG 0.80 w 44.00 372.59 507.28 121.20 re B Q
+q 0.910 0.930 0.970 rg 44.00 475.79 507.28 18.00 re f Q
+BT /F2 8.2 Tf 0.150 0.180 0.250 rg 54.00 480.79 Td (How StudentIDE Connects to Node.js Runner \(src/services/javaRunner.ts\)) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 462.79 Td (const response = await fetch\(`${cleanUrl}/execute`, {) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 451.39 Td (  method: 'POST',) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 439.99 Td (  headers: {) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 428.59 Td (    'Content-Type': 'application/json',) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 417.19 Td (    'x-api-key': options.apiSecret || 'MY_SECURE_LAB_KEY_123') Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 405.79 Td (  },) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 394.39 Td (  body: JSON.stringify\({ code, input, expectedOutput }\)) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 382.99 Td (}\);) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 362.59 Td (C. Google Sheets Sync & Official PDF Lab Records) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 347.59 Td (* SheetService \(src/services/sheetService.ts\):) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 277.28 347.59 Td (Every action \(saveExercise, submit, submitLabRecord,) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 334.19 Td (saveEvaluation, coordinatorLogin\) sends JSON via POST to Code.gs, with an automatic GET URL fallback in) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 320.79 Td (case Google's 302 redirect triggers a browser CORS block.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 304.89 Td (* PDF Generation \(LabRecordModal.tsx + src/index.css\):) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 321.46 304.89 Td (Uses React's createPortal\(..., document.body\) and) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 291.49 Td (CSS @media print rules \(body.lab-record-print-active > #root { display: none }\) so browser Print-to-PDF) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 278.09 Td (prints clean A4 pages \(Cover, Bonafide, INDEX, Experiments\) without printing the dashboard.) Tj ET
+q 0.850 0.880 0.920 RG 0.60 w 44.00 34.00 m 551.28 34.00 l S Q
+BT /F1 7.5 Tf 0.450 0.500 0.580 rg 44.00 22.00 Td (OBJECT ORIENTED PROGRAMMING APPROACH Lab \(BCB52003\) - Codebase Technology Guide) Tj ET
+BT /F1 7.5 Tf 0.450 0.500 0.580 rg 509.28 22.00 Td (Page 3) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 5573 >>
+stream
+q 0.950 0.960 0.980 rg 0.00 809.89 595.28 32.00 re f Q
+q 0.850 0.880 0.930 RG 0.80 w 0.00 809.89 m 595.28 809.89 l S Q
+BT /F2 8.5 Tf 0.280 0.330 0.450 rg 44.00 820.89 Td (BCB52003 Tech Stack Tutorial \(Vite, Node.js & Docker\)) Tj ET
+BT /F2 8.5 Tf 0.400 0.450 0.550 rg 509.28 820.89 Td (Page 4) Tj ET
+q 0.950 0.960 1.000 rg 0.080 0.480 0.240 RG 0.90 w 44.00 741.89 507.28 44.00 re B Q
+q 0.080 0.480 0.240 rg 44.00 741.89 6.00 44.00 re f Q
+BT /F2 12.5 Tf 0.080 0.100 0.180 rg 58.00 769.89 Td (4. Node.js & Express: The Java Code Execution Server) Tj ET
+BT /F1 8.8 Tf 0.320 0.370 0.480 rg 58.00 754.89 Td (Files: /server.js, /java-runner/server.js, /java-runner/package.json) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 729.89 Td (Node.js lets JavaScript run directly on a Linux server instead of inside a browser. In this app, Node.js powers) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 716.39 Td (the lightweight Express REST API inside java-runner/server.js.) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 698.89 Td (Why Are There Two server.js Files?) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 683.89 Td (* Root /server.js \(17 lines\):) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 182.95 683.89 Td (Uses fs.existsSync\('java-runner/server.js'\) and require\(runnerPath\). If a host) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 670.49 Td (starts Node from the project root, it automatically delegates to java-runner/server.js.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 654.59 Td (* /java-runner/server.js \(165 lines\):) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 226.73 654.59 Td (The real Express web server listening on process.env.PORT || 3000 with) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 641.19 Td (only two npm dependencies: express and cors.) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 625.29 Td (Step-by-Step Inside java-runner/server.js) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 610.29 Td (* 1. Health Checks \(GET / & GET /health\):) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 252.30 610.29 Td (Cloud hosts like Render ping / or /health to verify the container) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 596.89 Td (booted cleanly before routing student traffic to it.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 580.99 Td (* 2. API Key Guard \(checkAuth\):) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 205.73 580.99 Td (Reads req.headers['x-api-key'] and compares it to process.env.API_SECRET.) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 567.59 Td (Unauthorized requests immediately get HTTP 403.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 551.69 Td (* 3. Memory-Safe Queue \(SimpleQueue\(1\)\):) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 251.81 551.69 Td (Free Render containers have only 512 MB RAM. SimpleQueue runs) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 538.29 Td (only 1 javac/java job at a time \(concurrency = 1\) so 30 students clicking Submit together never crash the server.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 522.39 Td (* 4. Temp Isolation \(/tmp/<runId>\):) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 222.15 522.39 Td (Detects the class name via regex \(/public\\s+class\\s+\([A-Za-z0-9_]+\)/\),) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 508.99 Td (writes <ClassName>.java and input.txt, and transfers ownership to the non-root sandbox user.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 493.09 Td (* 5. Compile + 5s Timeout Execution:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 222.95 493.09 Td (Runs su - sandbox -c "cd /tmp/... && javac Main.java && timeout 5s java) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 479.69 Td (Main < input.txt". Exit code 124 detects infinite loops cleanly.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 463.79 Td (* 6. Cleanup & Output Grading:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 197.18 463.79 Td (Deletes /tmp/<runId> in all branches \(even on error\), reports stderr if) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 450.39 Td (compilation/runtime failed, or compares stdout.trim\(\) against expectedOutput.trim\(\).) Tj ET
+q 0.970 0.980 0.990 rg 0.800 0.840 0.900 RG 0.80 w 44.00 313.29 507.28 121.20 re B Q
+q 0.910 0.930 0.970 rg 44.00 416.49 507.28 18.00 re f Q
+BT /F2 8.2 Tf 0.150 0.180 0.250 rg 54.00 421.49 Td (Core Execution Command Inside java-runner/server.js \(Lines 97-125\)) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 403.49 Td (const command = `su - sandbox -c "cd ${workDir} && javac ${className}.java) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 392.09 Td (                 && timeout 5s java ${className} < input.txt"`;) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 380.69 Td (exec\(command, { timeout: 8000 }, \(error, stdout, stderr\) => {) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 369.29 Td (  fs.rmSync\(workDir, { recursive: true, force: true }\); // Always cleanup) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 357.89 Td (  if \(stderr\) return res.json\({ passed: false, isError: true, log: stderr }\);) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 346.49 Td (  const isTimeout = error && \(error.code === 124 || error.killed\);) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 335.09 Td (  // Compare stdout.trim\(\) === expectedOutput.trim\(\)) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 323.69 Td (}\);) Tj ET
+q 0.850 0.880 0.920 RG 0.60 w 44.00 34.00 m 551.28 34.00 l S Q
+BT /F1 7.5 Tf 0.450 0.500 0.580 rg 44.00 22.00 Td (OBJECT ORIENTED PROGRAMMING APPROACH Lab \(BCB52003\) - Codebase Technology Guide) Tj ET
+BT /F1 7.5 Tf 0.450 0.500 0.580 rg 509.28 22.00 Td (Page 4) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Length 6386 >>
+stream
+q 0.950 0.960 0.980 rg 0.00 809.89 595.28 32.00 re f Q
+q 0.850 0.880 0.930 RG 0.80 w 0.00 809.89 m 595.28 809.89 l S Q
+BT /F2 8.5 Tf 0.280 0.330 0.450 rg 44.00 820.89 Td (BCB52003 Tech Stack Tutorial \(Vite, Node.js & Docker\)) Tj ET
+BT /F2 8.5 Tf 0.400 0.450 0.550 rg 509.28 820.89 Td (Page 5) Tj ET
+q 0.950 0.960 1.000 rg 0.050 0.420 0.720 RG 0.90 w 44.00 741.89 507.28 44.00 re B Q
+q 0.050 0.420 0.720 rg 44.00 741.89 6.00 44.00 re f Q
+BT /F2 12.5 Tf 0.080 0.100 0.180 rg 58.00 769.89 Td (5. Docker & Dockerfile: Packaging OpenJDK 17 + Node.js) Tj ET
+BT /F1 8.8 Tf 0.320 0.370 0.480 rg 58.00 754.89 Td (Files: /Dockerfile and /java-runner/Dockerfile) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 729.89 Td (Normally, Render's Node.js runtime does NOT include the Java compiler \(javac\), and Render's Java runtime does) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 716.39 Td (NOT include Node.js. Docker solves this by letting us write a recipe \(Dockerfile\) that builds a custom Linux) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 702.89 Td (container containing BOTH Eclipse Temurin OpenJDK 17 AND Node.js 22.) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 685.39 Td (Every Line of Your Dockerfile Explained) Tj ET
+q 0.140 0.180 0.280 rg 0.800 0.840 0.900 RG 0.60 w 44.00 652.39 195.00 18.00 re B Q
+BT /F2 8.4 Tf 1.000 1.000 1.000 rg 50.00 658.39 Td (Dockerfile Instruction) Tj ET
+q 0.140 0.180 0.280 rg 0.800 0.840 0.900 RG 0.60 w 239.00 652.39 312.28 18.00 re B Q
+BT /F2 8.4 Tf 1.000 1.000 1.000 rg 245.00 658.39 Td (Exact Purpose in This App) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 634.39 195.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 640.39 Td (FROM eclipse-temurin:17-jdk-jammy) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 239.00 634.39 312.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 245.00 640.39 Td (Base Ubuntu Linux image with Java 17 \(javac & java\) ready) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 616.39 195.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 622.39 Td (RUN useradd -m -s /bin/bash sandbox) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 239.00 616.39 312.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 245.00 622.39 Td (Creates low-privilege user so student Java cannot harm OS) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 598.39 195.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 604.39 Td (RUN curl ... setup_22.x | bash -) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 239.00 598.39 312.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 245.00 604.39 Td (Installs Node.js 22 LTS + npm inside the same container) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 580.39 195.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 586.39 Td (WORKDIR /app  &  COPY . .) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 239.00 580.39 312.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 245.00 586.39 Td (Sets /app as container folder and copies repo files in) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 562.39 195.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 568.39 Td (if [ -d "java-runner" ]; cp -rf ...) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 239.00 562.39 312.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 245.00 568.39 Td (Promotes java-runner/* to /app if built from repo root) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 544.39 195.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 550.39 Td (RUN npm install cors express --omit=dev) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 239.00 544.39 312.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 245.00 550.39 Td (Installs only cors + express \(skips React/Vite devDeps!\)) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 526.39 195.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 532.39 Td (RUN chown -R sandbox:sandbox /tmp) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 239.00 526.39 312.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 245.00 532.39 Td (Allows sandbox user to create /tmp/<runId> folders) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 44.00 508.39 195.00 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 50.00 514.39 Td (EXPOSE 3000 & CMD ["node","server.js"]) Tj ET
+q 0.990 0.990 1.000 rg 0.800 0.840 0.900 RG 0.60 w 239.00 508.39 312.28 18.00 re B Q
+BT /F1 8.2 Tf 0.150 0.180 0.240 rg 245.00 514.39 Td (Exposes port 3000 and starts Express on container boot) Tj ET
+q 0.930 0.980 0.950 rg 0.100 0.550 0.380 RG 0.80 w 44.00 445.39 507.28 53.00 re B Q
+BT /F2 9.2 Tf 0.100 0.550 0.380 rg 54.00 484.39 Td (Why 'npm install cors express --omit=dev' Is So Important) Tj ET
+BT /F1 9.0 Tf 0.120 0.180 0.200 rg 54.00 470.39 Td (Your root package.json includes React, Vite, TypeScript, and Tailwind. Inside the Docker Java Runner we ONLY) Tj ET
+BT /F1 9.0 Tf 0.120 0.180 0.200 rg 54.00 457.89 Td (install cors and express so the container builds fast and stays lightweight on Render's free tier.) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 435.39 Td (Security Layers Built Into the Container) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 420.39 Td (* Non-root execution \(sandbox user\):) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 225.14 420.39 Td (Even if a student writes File or Runtime.exec\(\) Java code, su - sandbox) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 406.99 Td (restricts them from modifying /app/server.js or reading system secrets.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 391.09 Td (* Hard 5-second timeout:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 169.51 391.09 Td (Linux timeout 5s terminates infinite while\(true\) loops before CPU or RAM is exhausted.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 375.19 Td (* API Secret Header:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 156.58 375.19 Td (Only requests carrying your matching VITE_API_SECRET / API_SECRET header can) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 361.79 Td (trigger compilation.) Tj ET
+q 0.850 0.880 0.920 RG 0.60 w 44.00 34.00 m 551.28 34.00 l S Q
+BT /F1 7.5 Tf 0.450 0.500 0.580 rg 44.00 22.00 Td (OBJECT ORIENTED PROGRAMMING APPROACH Lab \(BCB52003\) - Codebase Technology Guide) Tj ET
+BT /F1 7.5 Tf 0.450 0.500 0.580 rg 509.28 22.00 Td (Page 5) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 14 0 R >>
+endobj
+16 0 obj
+<< /Length 5515 >>
+stream
+q 0.950 0.960 0.980 rg 0.00 809.89 595.28 32.00 re f Q
+q 0.850 0.880 0.930 RG 0.80 w 0.00 809.89 m 595.28 809.89 l S Q
+BT /F2 8.5 Tf 0.280 0.330 0.450 rg 44.00 820.89 Td (BCB52003 Tech Stack Tutorial \(Vite, Node.js & Docker\)) Tj ET
+BT /F2 8.5 Tf 0.400 0.450 0.550 rg 509.28 820.89 Td (Page 6) Tj ET
+q 0.950 0.960 1.000 rg 0.680 0.240 0.480 RG 0.90 w 44.00 741.89 507.28 44.00 re B Q
+q 0.680 0.240 0.480 rg 44.00 741.89 6.00 44.00 re f Q
+BT /F2 12.5 Tf 0.080 0.100 0.180 rg 58.00 769.89 Td (6. CI/CD Deployment & Beginner Hands-On Commands) Tj ET
+BT /F1 8.8 Tf 0.320 0.370 0.480 rg 58.00 754.89 Td (Files: .github/workflows/deploy.yml, .env.example) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 729.89 Td (A. Automated Frontend Deployment \(.github/workflows/deploy.yml\)) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 714.89 Td (Whenever you push commits to the main or master branch on GitHub, GitHub Actions spins up an Ubuntu runner) Tj ET
+BT /F1 9.5 Tf 0.180 0.220 0.290 rg 44.00 701.39 Td (and executes these exact steps automatically:) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 683.89 Td (* 1. Setup Node 20:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 142.15 683.89 Td (Installs Node 20 and runs npm install --legacy-peer-deps.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 667.99 Td (* 2. Inject Secrets & Build:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 184.14 667.99 Td (Runs npm run build while passing VITE_APPS_SCRIPT_URL,) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 654.59 Td (VITE_RENDER_SERVICE_URL, VITE_API_SECRET, and VITE_GOOGLE_CLIENT_ID from GitHub) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 641.19 Td (Repository Settings -> Secrets and variables -> Actions.) Tj ET
+BT /F2 9.3 Tf 0.100 0.130 0.220 rg 50.00 625.29 Td (* 3. Publish to GitHub Pages:) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 187.42 625.29 Td (Copies dist/index.html to dist/404.html, adds dist/.nojekyll, and publishes ./dist via) Tj ET
+BT /F1 9.3 Tf 0.180 0.220 0.290 rg 60.00 611.89 Td (actions/deploy-pages@v4.) Tj ET
+BT /F2 10.5 Tf 0.120 0.160 0.250 rg 44.00 595.99 Td (B. Hands-On Commands Cheat Sheet \(Run Locally to Practice\)) Tj ET
+q 0.970 0.980 0.990 rg 0.800 0.840 0.900 RG 0.80 w 44.00 493.99 507.28 87.00 re B Q
+q 0.910 0.930 0.970 rg 44.00 562.99 507.28 18.00 re f Q
+BT /F2 8.2 Tf 0.150 0.180 0.250 rg 54.00 567.99 Td (1. Frontend Commands \(Vite + TypeScript + React\)) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 549.99 Td (cp .env.example .env         # Configure your Sheet & Render URLs locally) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 538.59 Td (npm install                  # Download Vite, React, Tailwind into node_modules) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 527.19 Td (npm run dev                  # Start Vite dev server at http://localhost:3000) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 515.79 Td (npm run lint                 # Run TypeScript check \(tsc --noEmit\)) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 504.39 Td (npm run build                # Build production static files into dist/) Tj ET
+q 0.970 0.980 0.990 rg 0.800 0.840 0.900 RG 0.80 w 44.00 317.19 507.28 166.80 re B Q
+q 0.910 0.930 0.970 rg 44.00 465.99 507.28 18.00 re f Q
+BT /F2 8.2 Tf 0.150 0.180 0.250 rg 54.00 470.99 Td (2. Node.js & Docker Runner Commands \(Local Testing\)) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 452.99 Td (# Build the Docker image locally from root Dockerfile:) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 441.59 Td (docker build -t javalab-runner .) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 430.19 Td () Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 418.79 Td (# Start the JDK 17 + Node.js container on port 3000:) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 407.39 Td (docker run -p 3000:3000 -e API_SECRET=MY_SECURE_LAB_KEY_123 javalab-runner) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 395.99 Td () Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 384.59 Td (# Test the running API with curl:) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 373.19 Td (curl -X POST http://localhost:3000/execute \\) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 361.79 Td (  -H "Content-Type: application/json" \\) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 350.39 Td (  -H "x-api-key: MY_SECURE_LAB_KEY_123" \\) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 338.99 Td (  -d '{"code":"public class Main{public static void main\(String[] a\){) Tj ET
+BT /F3 8.0 Tf 0.100 0.140 0.220 rg 54.00 327.59 Td (       System.out.println\(42\);}}","input":"","expectedOutput":"42"}') Tj ET
+q 0.930 0.980 0.950 rg 0.100 0.550 0.380 RG 0.80 w 44.00 241.69 507.28 65.50 re B Q
+BT /F2 9.2 Tf 0.100 0.550 0.380 rg 54.00 293.19 Td (Recommended Beginner Learning Path) Tj ET
+BT /F1 9.0 Tf 0.120 0.180 0.200 rg 54.00 279.19 Td (1\) Edit a button label in src/components/Header.tsx while 'npm run dev' runs to see Vite's instant update.  2\)) Tj ET
+BT /F1 9.0 Tf 0.120 0.180 0.200 rg 54.00 266.69 Td (Inspect Network tab in Chrome DevTools when clicking 'Run Public Tests' to see the JSON sent to /execute.  3\)) Tj ET
+BT /F1 9.0 Tf 0.120 0.180 0.200 rg 54.00 254.19 Td (Run 'docker build' & 'docker run' locally and send a curl request to watch OpenJDK 17 compile your Java snippet.) Tj ET
+q 0.850 0.880 0.920 RG 0.60 w 44.00 34.00 m 551.28 34.00 l S Q
+BT /F1 7.5 Tf 0.450 0.500 0.580 rg 44.00 22.00 Td (OBJECT ORIENTED PROGRAMMING APPROACH Lab \(BCB52003\) - Codebase Technology Guide) Tj ET
+BT /F1 7.5 Tf 0.450 0.500 0.580 rg 509.28 22.00 Td (Page 6) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 16 0 R >>
+endobj
+xref
+0 18
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000157 00000 n 
+0000000254 00000 n 
+0000000356 00000 n 
+0000000451 00000 n 
+0000008663 00000 n 
+0000008815 00000 n 
+0000015553 00000 n 
+0000015705 00000 n 
+0000021428 00000 n 
+0000021582 00000 n 
+0000027208 00000 n 
+0000027362 00000 n 
+0000033801 00000 n 
+0000033955 00000 n 
+0000039523 00000 n 
+trailer
+<< /Size 18 /Root 1 0 R >>
+startxref
+39677
+%%EOF

@@ -23,11 +23,11 @@ export class SheetService {
   /**
    * Fetch active exercises from Google Sheets via Apps Script GET
    */
-  static async fetchActiveExercises(sheetUrl: string): Promise<Exercise[]> {
-    if (!sheetUrl || !sheetUrl.startsWith('http')) return [];
+  static async fetchActiveExercises(sheetUrl: string): Promise<Exercise[] | null> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) return null;
     try {
       const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getActiveExercises&t=${Date.now()}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
@@ -53,7 +53,7 @@ export class SheetService {
     } catch (err) {
       console.warn('Failed to fetch active exercises from Google Sheets:', err);
     }
-    return [];
+    return null;
   }
 
   /**
@@ -421,11 +421,11 @@ export class SheetService {
   /**
    * Fetch all rubric evaluations from Google Sheets
    */
-  static async fetchEvaluations(sheetUrl: string): Promise<StudentLabRecordSubmission[]> {
-    if (!sheetUrl || !sheetUrl.startsWith('http')) return [];
+  static async fetchEvaluations(sheetUrl: string): Promise<StudentLabRecordSubmission[] | null> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) return null;
     try {
       const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getEvaluations&t=${Date.now()}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
@@ -440,17 +440,17 @@ export class SheetService {
     } catch (err) {
       console.warn('Failed to fetch evaluations from Google Sheets:', err);
     }
-    return [];
+    return null;
   }
 
   /**
    * Fetch student submissions from Google Sheets Submissions tab
    */
-  static async fetchSubmissions(sheetUrl: string): Promise<Submission[]> {
-    if (!sheetUrl || !sheetUrl.startsWith('http')) return [];
+  static async fetchSubmissions(sheetUrl: string): Promise<Submission[] | null> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) return null;
     try {
       const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getSubmissions&t=${Date.now()}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
@@ -465,17 +465,49 @@ export class SheetService {
     } catch (err) {
       console.warn('Failed to fetch submissions from Google Sheets:', err);
     }
-    return [];
+    return null;
+  }
+
+  /**
+   * Fetch proctoring violations from Google Sheets Violations tab
+   */
+  static async fetchViolations(sheetUrl: string): Promise<Violation[] | null> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) return null;
+    try {
+      const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getViolations&t=${Date.now()}`;
+      const response = await fetch(url, { cache: 'no-store' });
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          return data.map((item: any, idx: number) => ({
+            id: item.id || `VIO_SHEET_${idx + 1}`,
+            timestamp: String(item.timestamp || ''),
+            studentEmail: String(item.studentEmail || ''),
+            personalEmail: String(item.personalEmail || ''),
+            deviceId: String(item.deviceId || ''),
+            regNo: String(item.regNo || ''),
+            studentName: String(item.studentName || ''),
+            exerciseId: String(item.exerciseId || ''),
+            type: (item.type || 'TAB_SWITCH') as Violation['type'],
+            details: String(item.details || ''),
+            severity: (item.severity === 'low' || item.severity === 'high' ? item.severity : 'medium') as Violation['severity'],
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch violations from Google Sheets:', err);
+    }
+    return null;
   }
 
   /**
    * Fetch all student LoginAudit records (Mail ID & Device ID tracking) from Google Sheets
    */
-  static async fetchLoginAudit(sheetUrl: string): Promise<LoginAuditRecord[]> {
-    if (!sheetUrl || !sheetUrl.startsWith('http')) return [];
+  static async fetchLoginAudit(sheetUrl: string): Promise<LoginAuditRecord[] | null> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) return null;
     try {
       const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getLoginAudit&t=${Date.now()}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
@@ -485,17 +517,17 @@ export class SheetService {
     } catch (err) {
       console.warn('Failed to fetch LoginAudit from Google Sheets:', err);
     }
-    return [];
+    return null;
   }
 
   /**
    * Fetch enrolled students directly from Students tab in Google Sheets
    */
-  static async fetchStudents(sheetUrl: string): Promise<StudentRecord[]> {
-    if (!sheetUrl || !sheetUrl.startsWith('http')) return [];
+  static async fetchStudents(sheetUrl: string): Promise<StudentRecord[] | null> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) return null;
     try {
       const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getStudents&t=${Date.now()}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
@@ -505,7 +537,7 @@ export class SheetService {
     } catch (err) {
       console.warn('Failed to fetch students from Google Sheets:', err);
     }
-    return [];
+    return null;
   }
 
   /**
@@ -667,11 +699,11 @@ export class SheetService {
     });
   }
 
-  static async fetchFaculty(sheetUrl: string): Promise<FacultyRecord[]> {
-    if (!sheetUrl || !sheetUrl.startsWith('http')) return [];
+  static async fetchFaculty(sheetUrl: string): Promise<FacultyRecord[] | null> {
+    if (!sheetUrl || !sheetUrl.startsWith('http')) return null;
     try {
       const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getFaculty&t=${Date.now()}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
@@ -681,7 +713,7 @@ export class SheetService {
     } catch (err) {
       console.warn('Failed to fetch faculty list from Google Sheets:', err);
     }
-    return [];
+    return null;
   }
 
   static async saveFaculty(
@@ -708,7 +740,7 @@ export class SheetService {
     if (!sheetUrl || !sheetUrl.startsWith('http')) return fallback;
     try {
       const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getExamConfig&t=${Date.now()}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         if (data && typeof data.eseEnabled !== 'undefined') {
@@ -747,7 +779,7 @@ export class SheetService {
     if (!sheetUrl || !sheetUrl.startsWith('http')) return DEFAULT_RUBRIC_CONFIG;
     try {
       const url = `${sheetUrl}${sheetUrl.includes('?') ? '&' : '?'}action=getRubricTemplates&t=${Date.now()}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         if (data && (Array.isArray(data.LAB) || Array.isArray(data.ESE))) {

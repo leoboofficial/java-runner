@@ -27,6 +27,7 @@ function doGet(e) {
       endpoints: [
         "?action=getActiveExercises",
         "?action=getSubmissions",
+        "?action=getViolations",
         "?action=getStudents",
         "?action=getFaculty",
         "?action=getEvaluations",
@@ -148,6 +149,9 @@ function handleApiGet(e) {
   }
   if (action === 'getSubmissions') {
     return jsonResponse(getSubmissions());
+  }
+  if (action === 'getViolations') {
+    return jsonResponse(getViolations());
   }
   if (action === 'getStudents') {
     return jsonResponse(getStudents());
@@ -603,7 +607,7 @@ function getActiveExercises() {
 
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
-    if (!row[idIdx] && !row[titleIdx]) continue;
+    if (!String(row[idIdx] || '').trim() && !String(row[titleIdx] || '').trim()) continue;
 
     const closeTimeVal = row[closeIdx];
     const close = closeTimeVal ? new Date(closeTimeVal).getTime() : Infinity;
@@ -723,28 +727,61 @@ function getSubmissions() {
   const results = [];
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
-    if (!row[1] && !row[3]) continue;
+    const officialEmail = String(row[1] || '').trim();
+    const regNo = String(row[3] || '').trim();
+    if (!officialEmail && !regNo) continue;
     const score = parseFloat(row[8]) || 0;
     const rawType = String(row[12] || 'LAB').trim().toUpperCase();
     results.push({
       id: 'SUB_SHEET_' + i,
       timestamp: String(row[0] || ''),
-      studentEmail: String(row[1] || ''),
-      personalEmail: String(row[2] || ''),
-      regNo: String(row[3] || ''),
-      studentName: String(row[4] || ''),
-      exerciseId: String(row[5] || ''),
-      exerciseTitle: String(row[6] || ''),
-      status: String(row[7] || 'PENDING'),
+      studentEmail: officialEmail,
+      personalEmail: String(row[2] || '').trim(),
+      regNo: regNo,
+      studentName: String(row[4] || '').trim(),
+      exerciseId: String(row[5] || '').trim(),
+      exerciseTitle: String(row[6] || '').trim(),
+      status: String(row[7] || 'PENDING').trim(),
       score: score,
       publicPassed: score >= 50,
       privatePassed: score === 100,
       publicLog: '',
       privateLog: '',
-      deviceId: String(row[9] || ''),
-      multiStudentAlert: String(row[10] || '') === 'CLEAR' ? '' : String(row[10] || ''),
+      deviceId: String(row[9] || '').trim(),
+      multiStudentAlert: String(row[10] || '').trim() === 'CLEAR' ? '' : String(row[10] || '').trim(),
       code: String(row[11] || ''),
       assessmentType: rawType === 'ESE' ? 'ESE' : 'LAB'
+    });
+  }
+  return results.reverse();
+}
+
+function getViolations() {
+  const sheet = getSheet('Violations');
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length <= 1) return [];
+
+  const results = [];
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const officialEmail = String(row[1] || '').trim();
+    const regNo = String(row[3] || '').trim();
+    const vType = String(row[6] || '').trim();
+    if (!officialEmail && !regNo && !vType) continue;
+    const rawSeverity = String(row[8] || 'medium').trim().toLowerCase();
+    const severity = (rawSeverity === 'low' || rawSeverity === 'high') ? rawSeverity : 'medium';
+    results.push({
+      id: 'VIO_SHEET_' + i,
+      timestamp: String(row[0] || ''),
+      studentEmail: officialEmail,
+      personalEmail: String(row[2] || '').trim(),
+      regNo: regNo,
+      studentName: String(row[4] || '').trim(),
+      exerciseId: String(row[5] || '').trim(),
+      type: vType || 'TAB_SWITCH',
+      details: String(row[7] || ''),
+      severity: severity,
+      deviceId: String(row[9] || '').trim()
     });
   }
   return results.reverse();
@@ -940,7 +977,7 @@ function getEvaluations() {
   const results = [];
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
-    if (!row[1] && !row[3]) continue;
+    if (!String(row[1] || '').trim() && !String(row[3] || '').trim()) continue;
 
     const concept = parseFloat(row[6]) || 0;
     const naming = parseFloat(row[7]) || 0;
@@ -1010,7 +1047,7 @@ function getLoginAudit() {
   const results = [];
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
-    if (!row[1] && !row[2]) continue;
+    if (!String(row[1] || '').trim() && !String(row[2] || '').trim()) continue;
     results.push({
       id: 'LOGIN_' + i,
       timestamp: String(row[0] || ''),

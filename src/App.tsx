@@ -163,50 +163,81 @@ export default function App() {
     };
   });
 
-  // Sync exercises, faculty, students, evaluations, submissions, loginAudit, examConfig & rubricConfig directly from Google Sheets
+  const syncAllFromSheets = React.useCallback(
+    async (sheetUrl: string) => {
+      if (!sheetUrl || !sheetUrl.startsWith('http')) return null;
+
+      const [
+        freshExercises,
+        freshFaculty,
+        freshStudents,
+        freshSubs,
+        freshViolations,
+        freshEvals,
+        freshAudit,
+        freshExamCfg,
+        freshRubrics,
+      ] = await Promise.all([
+        SheetService.fetchActiveExercises(sheetUrl),
+        SheetService.fetchFaculty(sheetUrl),
+        SheetService.fetchStudents(sheetUrl),
+        SheetService.fetchSubmissions(sheetUrl),
+        SheetService.fetchViolations(sheetUrl),
+        SheetService.fetchEvaluations(sheetUrl),
+        SheetService.fetchLoginAudit(sheetUrl),
+        SheetService.fetchExamConfig(sheetUrl),
+        SheetService.fetchRubricTemplates(sheetUrl),
+      ]);
+
+      if (freshExercises !== null) setExercises(freshExercises);
+      if (freshFaculty !== null) setFaculty(freshFaculty);
+      if (freshStudents !== null) setStudents(freshStudents);
+      if (freshSubs !== null) setSubmissions(freshSubs);
+      if (freshViolations !== null) setViolations(freshViolations);
+      if (freshEvals !== null) {
+        setEvaluations(freshEvals);
+        try {
+          localStorage.setItem(EVALUATIONS_STORAGE_KEY, JSON.stringify(freshEvals));
+        } catch (e) {}
+      }
+      if (freshAudit !== null) {
+        setLoginAudit(freshAudit);
+        try {
+          localStorage.setItem(LOGIN_AUDIT_STORAGE_KEY, JSON.stringify(freshAudit));
+        } catch (e) {}
+      }
+      setExamConfig(freshExamCfg);
+      setRubricConfig(freshRubrics);
+
+      return {
+        exercisesCount: freshExercises?.length ?? 0,
+        studentsCount: freshStudents?.length ?? 0,
+        submissionsCount: freshSubs?.length ?? 0,
+        evaluationsCount: freshEvals?.length ?? 0,
+        violationsCount: freshViolations?.length ?? 0,
+      };
+    },
+    []
+  );
+
+  // Sync exercises, faculty, students, evaluations, submissions, violations, loginAudit, examConfig & rubricConfig directly from Google Sheets
   React.useEffect(() => {
     if (settings.googleSheetsUrl && settings.googleSheetsUrl.startsWith('http')) {
-      SheetService.fetchActiveExercises(settings.googleSheetsUrl).then((fetched) => {
-        setExercises(fetched);
-      });
-
-      SheetService.fetchFaculty(settings.googleSheetsUrl).then((fetchedFaculty) => {
-        setFaculty(fetchedFaculty);
-      });
-
-      SheetService.fetchStudents(settings.googleSheetsUrl).then((fetchedStudents) => {
-        setStudents(fetchedStudents);
-      });
-
-      SheetService.fetchSubmissions(settings.googleSheetsUrl).then((fetchedSubs) => {
-        if (fetchedSubs.length > 0) {
-          setSubmissions(fetchedSubs);
-        }
-      });
-
-      SheetService.fetchEvaluations(settings.googleSheetsUrl).then((fetchedEvals) => {
-        setEvaluations(fetchedEvals);
-        try {
-          localStorage.setItem(EVALUATIONS_STORAGE_KEY, JSON.stringify(fetchedEvals));
-        } catch (e) {}
-      });
-
-      SheetService.fetchLoginAudit(settings.googleSheetsUrl).then((fetchedAudit) => {
-        setLoginAudit(fetchedAudit);
-        try {
-          localStorage.setItem(LOGIN_AUDIT_STORAGE_KEY, JSON.stringify(fetchedAudit));
-        } catch (e) {}
-      });
-
-      SheetService.fetchExamConfig(settings.googleSheetsUrl).then((cfg) => {
-        setExamConfig(cfg);
-      });
-
-      SheetService.fetchRubricTemplates(settings.googleSheetsUrl).then((tmpl) => {
-        setRubricConfig(tmpl);
-      });
+      syncAllFromSheets(settings.googleSheetsUrl);
     }
-  }, [settings.googleSheetsUrl]);
+  }, [settings.googleSheetsUrl, syncAllFromSheets]);
+
+  // Also re-sync live Google Sheet state whenever Faculty opens or logs into the Faculty portal
+  React.useEffect(() => {
+    if (
+      currentTab === 'faculty' &&
+      currentUser.verifiedViaSheet &&
+      settings.googleSheetsUrl &&
+      settings.googleSheetsUrl.startsWith('http')
+    ) {
+      syncAllFromSheets(settings.googleSheetsUrl);
+    }
+  }, [currentTab, currentUser.verifiedViaSheet, settings.googleSheetsUrl, syncAllFromSheets]);
 
   // Modals
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -238,7 +269,7 @@ export default function App() {
       if (syncResult.success) {
         showToast(`Synced "${newEx.title}" to Google Sheet Exercises tab with Starter Code!`);
         const fresh = await SheetService.fetchActiveExercises(settings.googleSheetsUrl);
-        setExercises(fresh);
+        if (fresh !== null) setExercises(fresh);
       } else {
         showToast(`Saved locally. Warning: ${syncResult.message || 'Check Apps Script deployment.'}`, 'warn');
       }
@@ -267,8 +298,12 @@ export default function App() {
       return;
     }
     const freshFaculty = await SheetService.fetchFaculty(settings.googleSheetsUrl);
-    setFaculty(freshFaculty);
-    showToast(`Synced ${freshFaculty.length} course teacher(s) from Google Sheet.`);
+    if (freshFaculty !== null) {
+      setFaculty(freshFaculty);
+      showToast(`Synced ${freshFaculty.length} course teacher(s) from Google Sheet.`);
+    } else {
+      showToast('Unable to reach Google Sheet right now.', 'warn');
+    }
   };
 
   // Coordinator: Add or Edit Course Handler in Google Sheet Faculty tab
@@ -282,7 +317,7 @@ export default function App() {
     const res = await SheetService.saveFaculty(settings.googleSheetsUrl, handler, originalEmail);
     if (res.success) {
       const freshFaculty = await SheetService.fetchFaculty(settings.googleSheetsUrl);
-      if (freshFaculty.length > 0) {
+      if (freshFaculty !== null && freshFaculty.length > 0) {
         setFaculty(freshFaculty);
       } else {
         setFaculty((prev) => {
@@ -310,34 +345,13 @@ export default function App() {
   // Faculty: Manually trigger re-sync from Google Sheets
   const handleRefreshFromSheets = async () => {
     if (settings.googleSheetsUrl) {
-      showToast('Syncing exercises, submissions, evaluations, rubrics & ESE config from Google Sheet...');
-      const [fresh, freshFaculty, freshStudents, freshSubs, freshEvals, freshAudit, freshExamCfg, freshRubrics] =
-        await Promise.all([
-          SheetService.fetchActiveExercises(settings.googleSheetsUrl),
-          SheetService.fetchFaculty(settings.googleSheetsUrl),
-          SheetService.fetchStudents(settings.googleSheetsUrl),
-          SheetService.fetchSubmissions(settings.googleSheetsUrl),
-          SheetService.fetchEvaluations(settings.googleSheetsUrl),
-          SheetService.fetchLoginAudit(settings.googleSheetsUrl),
-          SheetService.fetchExamConfig(settings.googleSheetsUrl),
-          SheetService.fetchRubricTemplates(settings.googleSheetsUrl),
-        ]);
-      setExercises(fresh);
-      setFaculty(freshFaculty);
-      setStudents(freshStudents);
-      if (freshSubs.length > 0) setSubmissions(freshSubs);
-      setEvaluations(freshEvals);
-      setLoginAudit(freshAudit);
-      setExamConfig(freshExamCfg);
-      setRubricConfig(freshRubrics);
-      try {
-        localStorage.setItem(EVALUATIONS_STORAGE_KEY, JSON.stringify(freshEvals));
-        localStorage.setItem(LOGIN_AUDIT_STORAGE_KEY, JSON.stringify(freshAudit));
-      } catch (e) {}
-
-      showToast(
-        `Synced ${fresh.length} question(s), ${freshStudents.length} student(s), ${freshEvals.length} evaluation(s)!`
-      );
+      showToast('Syncing exercises, submissions, evaluations, violations & ESE config from Google Sheet...');
+      const summary = await syncAllFromSheets(settings.googleSheetsUrl);
+      if (summary) {
+        showToast(
+          `Synced ${summary.exercisesCount} question(s), ${summary.submissionsCount} submission(s), ${summary.evaluationsCount} evaluation(s), ${summary.violationsCount} violation(s)!`
+        );
+      }
     } else {
       showToast('Google Sheets URL is not configured.', 'warn');
     }
@@ -718,7 +732,7 @@ export default function App() {
       setCurrentTab('coordinator');
       if (settings.googleSheetsUrl) {
         SheetService.fetchFaculty(settings.googleSheetsUrl).then((freshFaculty) => {
-          setFaculty(freshFaculty);
+          if (freshFaculty !== null) setFaculty(freshFaculty);
         });
       }
       showToast(`Logged in to Course Coordinator Portal`);
